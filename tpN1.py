@@ -48,20 +48,36 @@ def nueva_ruleta(cromosomas):
     return indicesDeLosPadres
 
 def ruleta_segun_rango(cromosomas):
-    print(cromosomas)
+    tot = calcular_total(cromosomas)
     for i in range(len(cromosomas)):
         for j in range(i, len(cromosomas)):
-            #if(fitness(cromosomas[i],55) > fitness(cromosomas[j],55)):
-            if(cromosomas[i] > cromosomas[j]):
+            if(fitness(cromosomas[i],tot) > fitness(cromosomas[j],tot)):
                 aux = cromosomas[j]
                 cromosomas[j] = cromosomas[i]
                 cromosomas[i] = aux
-    print(cromosomas)
+
+    indicesDeLosPadres = [None, None]
+
+    totsum = 0
+    for k in range(len(cromosomas)):
+        totsum += k + 1
+
+    for i in range(2):
+        totRuleta = 0
+        flecha = random.random()*100
+        index = 0
+        condicion = True
+        while(condicion):
+            totRuleta += ((index + 1)/totsum)*100
+            if(totRuleta >= flecha and indicesDeLosPadres[0] != index):
+                indicesDeLosPadres[i] = index
+                condicion = False
+            else:
+                index += 1
+    return indicesDeLosPadres
+    
 
 
-
-#cromosomes = create_population(30, 10)
-#padrecitos = nueva_ruleta(cromosomes)
-#print(padrecitos)
-cromosomas = [2,4,1,8,6,9,0,3,5,7]
-ruleta_segun_rango(cromosomas)
+cromosomes = create_population(30, 10)
+padrecitos = ruleta_segun_rango(cromosomes)
+print(padrecitos)
