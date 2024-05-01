@@ -47,9 +47,21 @@ def nueva_ruleta(cromosomas):
                 index += 1
     return indicesDeLosPadres
 
+def ruleta_segun_rango(cromosomas):
+    print(cromosomas)
+    for i in range(len(cromosomas)):
+        for j in range(i, len(cromosomas)):
+            #if(fitness(cromosomas[i],55) > fitness(cromosomas[j],55)):
+            if(cromosomas[i] > cromosomas[j]):
+                aux = cromosomas[j]
+                cromosomas[j] = cromosomas[i]
+                cromosomas[i] = aux
+    print(cromosomas)
 
 
 
-cromosomes = create_population(30, 10)
-padrecitos = nueva_ruleta(cromosomes)
-print(padrecitos)
+#cromosomes = create_population(30, 10)
+#padrecitos = nueva_ruleta(cromosomes)
+#print(padrecitos)
+cromosomas = [2,4,1,8,6,9,0,3,5,7]
+ruleta_segun_rango(cromosomas)
