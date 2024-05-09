@@ -1,5 +1,11 @@
 import random
 
+poblacion = 10
+genes = 30
+prob_crossover = 0.75
+prob_mutacion = 0.05
+ciclos = 20
+
 def create_population(numberOfGenomes, numberOfIndividuals):
     cromosome = list()
     cromosomes = list()
@@ -75,9 +81,36 @@ def ruleta_segun_rango(cromosomas):
             else:
                 index += 1
     return indicesDeLosPadres
+
+def ruleta_elite(cromosomas):
+    tot = calcular_total(cromosomas)
+    for i in range(len(cromosomas)):
+        for j in range(i, len(cromosomas)):
+            if(fitness(cromosomas[i],tot) > fitness(cromosomas[j],tot)):
+                aux = cromosomas[j]
+                cromosomas[j] = cromosomas[i]
+                cromosomas[i] = aux
+                                
     
+def obtenerpadres(indices, cromosomes):   
+    for i in range(2):
+        padres = (cromosomes[indices[i-1]])
+    return padres
 
-
-cromosomes = create_population(30, 10)
+#def crossover(padres, genes):
+    num = random.randint(1,genes)
+    for i in range(num):
+        
+    
+#for i in range(ciclos):
+cromosomes = create_population(genoma, poblacion)
 padrecitos = ruleta_segun_rango(cromosomes)
-print(padrecitos)
+padres = obtenerpadres(padrecitos, cromosomes)
+#crossover(padres, genes)
+
+   # print(cromosomes)
+   # print("-----------------------------------------")
+   # print(padrecitos)
+
+
+   # torneo: 4 nors al azar
