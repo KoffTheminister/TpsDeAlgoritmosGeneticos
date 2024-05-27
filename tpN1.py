@@ -8,7 +8,7 @@ tam_poblacion = 10
 genes = 30
 prob_crossover = 0.75
 prob_mutacion = 0.05
-ciclos = 20  #20 o 100 o 200
+ciclos = 100  #20 o 100 o 200
 tam_torneo = 2
 porcentaje_elitismo = 20 #porciento
 cant_elite = porcentaje_elitismo*tam_poblacion/100
@@ -248,7 +248,7 @@ def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion):
             poblacion2[i] = metodo_mutacion(poblacion2[i])
             if(fun_obj(poblacion2[i]) > valor_maximo):
                 valor_maximo = fun_obj(poblacion2[i])
-            if(fun_obj(poblacion2[i]) < valor_maximo):
+            if(fun_obj(poblacion2[i]) < valor_minimo):
                 valor_minimo = fun_obj(poblacion2[i])
             tot_sum += fun_obj(poblacion2[i])
         promedio = tot_sum/tam_poblacion
@@ -290,7 +290,7 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
             poblacion2[i] = metodo_mutacion(poblacion2[i])
             if(fun_obj(poblacion2[i]) > valor_maximo):
                 valor_maximo = fun_obj(poblacion2[i])
-            if(fun_obj(poblacion2[i]) < valor_maximo):
+            if(fun_obj(poblacion2[i]) < valor_minimo):
                 valor_minimo = fun_obj(poblacion2[i])
             tot_sum += fun_obj(poblacion2[i])
         promedio = tot_sum/tam_poblacion
@@ -304,8 +304,8 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
     plt.legend(loc = 'best')
     plt.plot(ejex, valores_promedio, 'g--', label = 'promedios')
     plt.legend(loc = 'best')
-    plt.title('estadisticas finales sin elitismo')
+    plt.title('estadisticas finales usando elitismo')
     plt.show()
     
-crear_universo_con_elitismo(ruleta_segun_rango, crossover_mascara, mutacion_mascara_probabilidad)
-crear_universo(ruleta_segun_rango, crossover_mascara, mutacion_mascara_probabilidad)
+crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
+crear_universo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
