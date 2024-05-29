@@ -8,7 +8,7 @@ tam_poblacion = 10
 genes = 30
 prob_crossover = 0.75
 prob_mutacion = 0.05
-ciclos = 50  #20 o 100 o 200
+ciclos = 200  #20 o 100 o 200
 tam_torneo = 2
 porcentaje_elitismo = 20 #porciento
 cant_elite = porcentaje_elitismo*tam_poblacion/100
@@ -227,6 +227,18 @@ def universo_torneo():   #funciona correctamente
 '''
 
 
+def imprimir(minimos,maximos,promedios,poblacion):
+    valor_maximo = 0
+    print("Ciclo       Valor minimo       Valor maximo       Valor promedio  \n")
+    for i in range(ciclos):
+        print(i+1, "          ", round(minimos[i],6),"            ",round(maximos[i],6),"            ", round(promedios[i],6))
+    for i in range(tam_poblacion):
+        if fun_obj(poblacion[i]) > valor_maximo:
+                valor_maximo = fun_obj(poblacion[i])
+                cromosoma = poblacion[i]
+    print("El cromosoma con el valor mas alto es:   ", cromosoma)
+
+
 def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion):
     ejex = list()
     valores_minimos = list()
@@ -298,7 +310,7 @@ def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion):
     plt.tight_layout()
     plt.show()
 
-
+    imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion)
 #funcion para crear un universo con especificos metodos de desarrollo y que hace uso del elitismo
 def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutacion):
     ejex = list()
@@ -375,13 +387,13 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
     plt.show()
 
 #crossover_mitad_mitad y mutacion_indice_aleatorio
-crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
-crear_universo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
+#crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
+#crear_universo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
 
-crear_universo_con_elitismo(ruleta_normal, crossover_mitad_mitad, mutacion_indice_aleatorio)
-crear_universo(ruleta_normal, crossover_mitad_mitad, mutacion_indice_aleatorio)
+#crear_universo_con_elitismo(ruleta_normal, crossover_mitad_mitad, mutacion_indice_aleatorio)
+#crear_universo(ruleta_normal, crossover_mitad_mitad, mutacion_indice_aleatorio)
 
-crear_universo_con_elitismo(seleccion_torneo, crossover_mitad_mitad, mutacion_indice_aleatorio)
+#crear_universo_con_elitismo(seleccion_torneo, crossover_mitad_mitad, mutacion_indice_aleatorio)
 crear_universo(seleccion_torneo, crossover_mitad_mitad, mutacion_indice_aleatorio)
 
 # #crossover_mitad_mitad y mutacion_mascara
@@ -433,6 +445,10 @@ crear_universo(seleccion_torneo, crossover_mascara, mutacion_mascara)
 # crear_universo(ruleta_segun_rango, crossover_mascara, mutacion_mascara_probabilidad)
 
 # crear_universo_con_elitismo(ruleta_normal, crossover_mascara, mutacion_mascara_probabilidad)
+#crear_universo(ruleta_normal, crossover_mascara, mutacion_mascara_probabilidad)
+
+# crear_universo_con_elitismo(seleccion_torneo, crossover_mascara, mutacion_mascara_probabilidad)
+# crear_universo(seleccion_torneo, crossover_mascara, mutacion_mascara_probabilidad)dad)
 # crear_universo(ruleta_normal, crossover_mascara, mutacion_mascara_probabilidad)
 
 # crear_universo_con_elitismo(seleccion_torneo, crossover_mascara, mutacion_mascara_probabilidad)
