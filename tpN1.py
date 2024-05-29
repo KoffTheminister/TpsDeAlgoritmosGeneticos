@@ -8,7 +8,7 @@ tam_poblacion = 10
 genes = 30
 prob_crossover = 0.75
 prob_mutacion = 0.05
-ciclos = 100  #20 o 100 o 200
+ciclos = 50  #20 o 100 o 200
 tam_torneo = 2
 porcentaje_elitismo = 20 #porciento
 cant_elite = porcentaje_elitismo*tam_poblacion/100
@@ -226,7 +226,7 @@ def universo_torneo():   #funciona correctamente
         print("El cromosoma ", p," tiene un valor en funcion objetivo igual a:  ", poblacion[p], " con una funcion objetivo de:  ", fun_obj(poblacion[p]),"\n")
 '''
 
-#funcion para crear un universo con especificos metodos de desarrollo
+
 def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion):
     ejex = list()
     valores_minimos = list()
@@ -239,31 +239,65 @@ def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion):
         valor_minimo = 1
         valor_maximo = 0
         tot_sum = 0
-        print("ciclo " , j)
         poblacion2 = list()
         padrecitos = metodo_seleccion(poblacion)
-        for k in range(int(tam_poblacion/2)):
-            metodo_crossover(obtenerpadres(padrecitos,poblacion,k), poblacion2)
+        for k in range(int(tam_poblacion / 2)):
+            metodo_crossover(obtenerpadres(padrecitos, poblacion, k), poblacion2)
         for i in range(tam_poblacion):
             poblacion2[i] = metodo_mutacion(poblacion2[i])
-            if(fun_obj(poblacion2[i]) > valor_maximo):
+            if fun_obj(poblacion2[i]) > valor_maximo:
                 valor_maximo = fun_obj(poblacion2[i])
-            if(fun_obj(poblacion2[i]) < valor_minimo):
+            if fun_obj(poblacion2[i]) < valor_minimo:
                 valor_minimo = fun_obj(poblacion2[i])
             tot_sum += fun_obj(poblacion2[i])
-        promedio = tot_sum/tam_poblacion
+        promedio = tot_sum / tam_poblacion
         valores_minimos.append(valor_minimo)
         valores_maximos.append(valor_maximo)
         valores_promedio.append(promedio)
         poblacion = poblacion2
-    plt.plot(ejex, valores_minimos, 'b--', label = 'minimos')
-    plt.legend(loc = 'best')
-    plt.plot(ejex , valores_maximos, 'r--', label = 'maximos')
-    plt.legend(loc = 'best')
-    plt.plot(ejex, valores_promedio, 'g--', label = 'promedios')
-    plt.legend(loc = 'best')
-    plt.title('estadisticas finales sin elitismo')
+
+
+    numeros = int(ciclos/10)
+
+    fig, axs = plt.subplots(1, 3, figsize=(12, 4))  # Reducimos el tamaño de la figura
+
+    fig.suptitle('Estadísticas Finales sin Elitismo', fontsize=16)
+    # Primer gráfico: Valores mínimos
+    axs[0].plot(ejex, valores_minimos, 'b')
+    axs[0].set_title('Valores Mínimos')
+    axs[0].set_xlabel('Corrida')
+    axs[0].set_ylabel('Valores')
+    axs[0].set_xlim(0, ciclos - 1)
+    axs[0].set_ylim(0, 1)
+    axs[0].set_xticks(range(0, ciclos + 1, numeros))
+    axs[0].set_yticks([i / 10 for i in range(0, 12)])
+    axs[0].legend(loc='best')
+
+    # Segundo gráfico: Valores máximos
+    axs[1].plot(ejex, valores_maximos, 'r')
+    axs[1].set_title('Valores Máximos')
+    axs[1].set_xlabel('Corrida')
+    axs[1].set_ylabel('Valores')
+    axs[1].set_xlim(0, ciclos - 1)
+    axs[1].set_ylim(0, 1)
+    axs[1].set_xticks(range(0, ciclos + 1, numeros))
+    axs[1].set_yticks([i / 10 for i in range(0, 12)])
+    axs[1].legend(loc='best')
+
+    # Tercer gráfico: Valores promedio
+    axs[2].plot(ejex, valores_promedio, 'g')
+    axs[2].set_title('Valores Promedios')
+    axs[2].set_xlabel('Corrida')
+    axs[2].set_ylabel('Valores')
+    axs[2].set_xlim(0, ciclos - 1)
+    axs[2].set_ylim(0, 1)
+    axs[2].set_xticks(range(0, ciclos + 1, numeros))
+    axs[2].set_yticks([i / 10 for i in range(0, 12)])
+    axs[2].legend(loc='best')
+
+    plt.tight_layout()
     plt.show()
+
 
 #funcion para crear un universo con especificos metodos de desarrollo y que hace uso del elitismo
 def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutacion):
@@ -278,7 +312,6 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
         valor_minimo = 1
         valor_maximo = 0
         tot_sum = 0
-        print("ciclo " , j)
         poblacion2 = list()
         poblacion = ordenar(poblacion)
         for e in range(int(cant_elite)):
@@ -298,14 +331,109 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
         valores_maximos.append(valor_maximo)
         valores_promedio.append(promedio)
         poblacion = poblacion2
-    plt.plot(ejex, valores_minimos, 'b--', label = 'minimos')
-    plt.legend(loc = 'best')
-    plt.plot(ejex , valores_maximos, 'r--', label = 'maximos')
-    plt.legend(loc = 'best')
-    plt.plot(ejex, valores_promedio, 'g--', label = 'promedios')
-    plt.legend(loc = 'best')
-    plt.title('estadisticas finales usando elitismo')
+
+    numeros = int(ciclos/10)
+
+
+    fig, axs = plt.subplots(1, 3, figsize=(12, 4))  # Reducimos el tamaño de la figura
+    fig.suptitle('Estadísticas Finales usando Elitismo', fontsize=16)
+
+    # Primer gráfico: Valores mínimos
+    axs[0].plot(ejex, valores_minimos, 'b')
+    axs[0].set_title('Valores Mínimos')
+    axs[0].set_xlabel('Corrida')
+    axs[0].set_ylabel('Valores')
+    axs[0].set_xlim(0, ciclos)
+    axs[0].set_ylim(0, 1)
+    axs[0].set_xticks(range(0, ciclos + 1, numeros))
+    axs[0].set_yticks([i / 10 for i in range(0, 12)])
+    axs[0].legend(loc='best')
+
+    # Segundo gráfico: Valores máximos
+    axs[1].plot(ejex, valores_maximos, 'r')
+    axs[1].set_title('Valores Máximos')
+    axs[1].set_xlabel('Corrida')
+    axs[1].set_ylabel('Valores')
+    axs[1].set_xlim(0, ciclos)
+    axs[1].set_ylim(0, 1)
+    axs[1].set_xticks(range(0, ciclos + 1, numeros))
+    axs[1].set_yticks([i / 10 for i in range(0, 12)])
+    axs[1].legend(loc='best')
+
+    # Tercer gráfico: Valores promedio
+    axs[2].plot(ejex, valores_promedio, 'g')
+    axs[2].set_title('Valores Promedio')
+    axs[2].set_xlabel('Corrida')
+    axs[2].set_ylabel('Valores')
+    axs[2].set_xlim(0, ciclos)
+    axs[2].set_ylim(0, 1)
+    axs[2].set_xticks(range(0, ciclos + 1, numeros))
+    axs[2].set_yticks([i / 10 for i in range(0, 12)])
+    axs[2].legend(loc='best')
+
+    plt.tight_layout()
     plt.show()
-    
+
+#crossover_mitad_mitad y mutacion_indice_aleatorio
 crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
 crear_universo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
+
+crear_universo_con_elitismo(ruleta_normal, crossover_mitad_mitad, mutacion_indice_aleatorio)
+crear_universo(ruleta_normal, crossover_mitad_mitad, mutacion_indice_aleatorio)
+
+crear_universo_con_elitismo(seleccion_torneo, crossover_mitad_mitad, mutacion_indice_aleatorio)
+crear_universo(seleccion_torneo, crossover_mitad_mitad, mutacion_indice_aleatorio)
+
+# #crossover_mitad_mitad y mutacion_mascara
+# crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_mascara)
+# crear_universo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_mascara)
+
+# crear_universo_con_elitismo(ruleta_normal, crossover_mitad_mitad, mutacion_mascara)
+# crear_universo(ruleta_normal, crossover_mitad_mitad, mutacion_mascara)
+
+# crear_universo_con_elitismo(seleccion_torneo, crossover_mitad_mitad, mutacion_mascara)
+# crear_universo(seleccion_torneo, crossover_mitad_mitad, mutacion_mascara)
+
+'''
+# #crossover_mitad_mitad y mutacion_mascara_probabilidad
+crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_mascara_probabilidad)
+crear_universo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_mascara_probabilidad)
+
+crear_universo_con_elitismo(ruleta_normal, crossover_mitad_mitad, mutacion_mascara_probabilidad)
+crear_universo(ruleta_normal, crossover_mitad_mitad, mutacion_mascara_probabilidad)
+
+crear_universo_con_elitismo(seleccion_torneo, crossover_mitad_mitad, mutacion_mascara_probabilidad)
+crear_universo(seleccion_torneo, crossover_mitad_mitad, mutacion_mascara_probabilidad)
+'''
+
+# #crossover_mascara y mutacion_indice_aleatorio
+# crear_universo_con_elitismo(ruleta_segun_rango, crossover_mascara, mutacion_indice_aleatorio)
+# crear_universo(ruleta_segun_rango, crossover_mascara, mutacion_indice_aleatorio)
+
+# crear_universo_con_elitismo(ruleta_normal, crossover_mascara, mutacion_indice_aleatorio)
+# crear_universo(ruleta_normal, crossover_mascara, mutacion_indice_aleatorio)
+
+# crear_universo_con_elitismo(seleccion_torneo, crossover_mascara, mutacion_indice_aleatorio)
+# crear_universo(seleccion_torneo, crossover_mascara, mutacion_indice_aleatorio)
+
+'''
+#crossover_mascara y mutacion_mascara
+crear_universo_con_elitismo(ruleta_segun_rango, crossover_mascara, mutacion_mascara)
+crear_universo(ruleta_segun_rango, crossover_mascara, mutacion_mascara)
+
+crear_universo_con_elitismo(ruleta_normal, crossover_mascara, mutacion_mascara)
+crear_universo(ruleta_normal, crossover_mascara, mutacion_mascara)
+
+crear_universo_con_elitismo(seleccion_torneo, crossover_mascara, mutacion_mascara)
+crear_universo(seleccion_torneo, crossover_mascara, mutacion_mascara)
+'''
+
+#crossover_mascara y mutacion_mascara_probabilidad
+# crear_universo_con_elitismo(ruleta_segun_rango, crossover_mascara, mutacion_mascara_probabilidad)
+# crear_universo(ruleta_segun_rango, crossover_mascara, mutacion_mascara_probabilidad)
+
+# crear_universo_con_elitismo(ruleta_normal, crossover_mascara, mutacion_mascara_probabilidad)
+# crear_universo(ruleta_normal, crossover_mascara, mutacion_mascara_probabilidad)
+
+# crear_universo_con_elitismo(seleccion_torneo, crossover_mascara, mutacion_mascara_probabilidad)
+# crear_universo(seleccion_torneo, crossover_mascara, mutacion_mascara_probabilidad)
