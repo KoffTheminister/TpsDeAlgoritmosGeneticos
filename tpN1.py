@@ -1,4 +1,3 @@
-#librerias
 import random
 import matplotlib
 import matplotlib.pyplot as plt
@@ -46,9 +45,9 @@ def calcular_total(cromosomas):
 
 def ordenar(cromosomas):
     tot = calcular_total(cromosomas)
-    for i in range(len(cromosomas)):
-        for j in range(i, len(cromosomas)):
-            if(fitness(cromosomas[i],tot) > fitness(cromosomas[j],tot)):
+    for i in range(tam_poblacion):
+        for j in range(i, tam_poblacion):
+            if(fitness(cromosomas[i], tot) > fitness(cromosomas[j],tot)):
                 aux = cromosomas[j]
                 cromosomas[j] = cromosomas[i]
                 cromosomas[i] = aux
@@ -124,8 +123,6 @@ def seleccion_torneo(cromosomas):
 def obtenerpadres(indices, cromosomes, indiceDePareja): 
     padres = list()  
     for i in range(2):
-        #print('numero de pareja: ', indiceDePareja)
-        #print('indice del responsable: ', indices[indiceDePareja][i-1])
         padres.append(cromosomes[indices[indiceDePareja][i-1]])
     return padres
 
@@ -192,58 +189,27 @@ def mutacion_mascara_probabilidad(individuo):
                 individuo[i] = 1 - individuo[i]
     return individuo
 
-'''
-estas funciones son los universos con las ruletas especificadas. La ultima vez que fueron probadas anduvieron correctamente, pero crear_universo se puede parametrizar. 
-Si estas funciones no funcionasen, entonces seguro seria debido a cambios en otras funciones
-
-def universo_ruleta_normal():   #funciona correctamente                                         
-    cromosomes = crear_poblacion(genes, tam_poblacion)
-    for j in range(ciclos):
-        print("ciclo " , j)
-        poblacion2 = list()
-        padrecitos = ruleta_normal(cromosomes)
-        for k in range(int(tam_poblacion/2)):
-            crossover_mitad_mitad(obtenerpadres(padrecitos,cromosomes,k), poblacion2 )
-        for i in range(tam_poblacion):
-            poblacion2[i] = mutacion_indice_aleatorio(poblacion2[i])
-        cromosomes = poblacion2
-    for p in range(tam_poblacion):
-        print("El cromosoma ", p," tiene un valor en funcion objetivo igual a:  ", cromosomes[p], " con una funcion objetivo de:  ", fun_obj(cromosomes[p]))
 
 
-def universo_torneo():   #funciona correctamente                                          
-    poblacion = crear_poblacion(genes, tam_poblacion)
-    for j in range(ciclos):
-        print("ciclo " , j)
-        poblacion2 = list()
-        padrecitos= seleccion_torneo(poblacion)
-        for k in range(int(tam_poblacion/2)):
-            crossover_mitad_mitad(obtenerpadres(padrecitos,poblacion,k), poblacion2 )
-        for i in range(tam_poblacion):
-            poblacion2[i] = mutacion_indice_aleatorio(poblacion2[i])
-        poblacion = poblacion2
-    for p in range(tam_poblacion):
-        print("El cromosoma ", p," tiene un valor en funcion objetivo igual a:  ", poblacion[p], " con una funcion objetivo de:  ", fun_obj(poblacion[p]),"\n")
-'''
 
-
-def imprimir(minimos,maximos,promedios,poblacion):
+def imprimir(minimos,maximos,promedios,poblacion, cromosomas_mayores):
     valor_maximo = 0
-    print("Ciclo       Valor minimo       Valor maximo       Valor promedio  \n")
+    cromosoma_maximo = None
+    print("Ciclo       Valor minimo       Valor maximo       Valor promedio        Cromosoma Maximo  \n")
     for i in range(ciclos):
-        print(i+1, "          ", round(minimos[i],6),"            ",round(maximos[i],6),"            ", round(promedios[i],6))
-    for i in range(tam_poblacion):
-        if fun_obj(poblacion[i]) > valor_maximo:
-                valor_maximo = fun_obj(poblacion[i])
-                cromosoma = poblacion[i]
-    print("El cromosoma con el valor mas alto es:   ", cromosoma)
+        print(maximos[i])
+        if (valor_maximo < maximos[i]):
+            valor_maximo = maximos[i]
+            cromosoma_maximo = cromosomas_mayores[i]
+    print("El cromosoma con el valor mas alto es:   ", cromosoma_maximo)
 
 
-def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion, string_sele, string_cross, string_mut):
+def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion):
     ejex = list()
     valores_minimos = list()
     valores_maximos = list()
     valores_promedio = list()
+    cromosomas_maximos = list()
     poblacion = crear_poblacion(genes, tam_poblacion)
     for j in range(ciclos):
         ejex.append(j)
@@ -253,14 +219,17 @@ def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion, string_s
         tot_sum = 0
         poblacion2 = list()
         padrecitos = metodo_seleccion(poblacion)
+
         for k in range(int(tam_poblacion / 2)):
             metodo_crossover(obtenerpadres(padrecitos, poblacion, k), poblacion2)
-        for i in range(tam_poblacion):
-            poblacion2[i] = metodo_mutacion(poblacion2[i])
-            if fun_obj(poblacion2[i]) > valor_maximo:
-                valor_maximo = fun_obj(poblacion2[i])
-            if fun_obj(poblacion2[i]) < valor_minimo:
-                valor_minimo = fun_obj(poblacion2[i])
+        for p in range(tam_poblacion):
+            poblacion2[p] = metodo_mutacion(poblacion2[p])
+
+        poblacion2 = ordenar(poblacion2)
+        valor_maximo = fun_obj(poblacion2[9])
+        cromosomas_maximos.append(poblacion2[9])
+        valor_minimo = fun_obj(poblacion2[0])
+        for i in range(int(tam_poblacion)):
             tot_sum += fun_obj(poblacion2[i])
         promedio = tot_sum / tam_poblacion
         valores_minimos.append(valor_minimo)
@@ -273,7 +242,7 @@ def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion, string_s
 
     fig, axs = plt.subplots(1, 3, figsize=(12, 4))  # Reducimos el tamaño de la figura
 
-    fig.suptitle(('Estadísticas Finales sin Elitismo, seleccion:',string_sele,',crossover:',string_cross,',mut:',string_mut), fontsize=16)
+    fig.suptitle('Estadísticas Finales sin Elitismo', fontsize=16)
     # Primer gráfico: Valores mínimos
     axs[0].plot(ejex, valores_minimos, 'b')
     axs[0].set_title('Valores Mínimos')
@@ -310,14 +279,20 @@ def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion, string_s
     plt.tight_layout()
     plt.show()
 
-    imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion)
+    imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion, cromosomas_maximos)
+
 #funcion para crear un universo con especificos metodos de desarrollo y que hace uso del elitismo
-def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutacion, string_sele, string_cross, string_mut):
+def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutacion):
     ejex = list()
     valores_minimos = list()
     valores_maximos = list()
     valores_promedio = list()
+    cromosomas_maximos = list()
     poblacion = crear_poblacion(genes, tam_poblacion)
+    erroresprimero = 0
+    erroressegundo = 0
+    valor_maximo_anterior = 0
+    cromosoma_maximo_anterior = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     for j in range(ciclos):
         ejex.append(j)
         valor_promedio = 0
@@ -326,29 +301,38 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
         tot_sum = 0
         poblacion2 = list()
         poblacion = ordenar(poblacion)
-        for e in range(int(cant_elite)):
-            poblacion2.append(poblacion[tam_poblacion - e - 1])
         padrecitos = metodo_seleccion(poblacion)
+
         for k in range(int((tam_poblacion - cant_elite)/2)):
             metodo_crossover(obtenerpadres(padrecitos,poblacion,k), poblacion2)
-        for i in range(tam_poblacion):
-            poblacion2[i] = metodo_mutacion(poblacion2[i])
-            if(fun_obj(poblacion2[i]) > valor_maximo):
-                valor_maximo = fun_obj(poblacion2[i])
-            if(fun_obj(poblacion2[i]) < valor_minimo):
-                valor_minimo = fun_obj(poblacion2[i])
+
+        for p in range(int(tam_poblacion - cant_elite)):
+            poblacion2[p] = metodo_mutacion(poblacion2[p])
+        
+        for i in range(int(cant_elite)):
+            poblacion2.append(poblacion[int(tam_poblacion - cant_elite + i)])
+        
+        poblacion2 = ordenar(poblacion2)
+        
+        if(fun_obj(poblacion2[9]) < fun_obj(cromosoma_maximo_anterior)):
+            poblacion2[9] = cromosoma_maximo_anterior
+        else:
+            cromosoma_maximo_anterior = poblacion2[9]
+            
+        cromosomas_maximos.append(poblacion2[9])
+        valor_minimo = fun_obj(poblacion2[0])
+        for i in range(int(tam_poblacion)):
             tot_sum += fun_obj(poblacion2[i])
         promedio = tot_sum/tam_poblacion
         valores_minimos.append(valor_minimo)
-        valores_maximos.append(valor_maximo)
+        valores_maximos.append(fun_obj(poblacion2[9]))
         valores_promedio.append(promedio)
         poblacion = poblacion2
 
     numeros = int(ciclos/10)
 
-
     fig, axs = plt.subplots(1, 3, figsize=(12, 4))  # Reducimos el tamaño de la figura
-    fig.suptitle(('Estadísticas Finales usando Elitismo, seleccion:',string_sele,',crossover:',string_cross,',mut:',string_mut), fontsize=16)
+    fig.suptitle('Estadísticas Finales usando Elitismo', fontsize=16)
 
     # Primer gráfico: Valores mínimos
     axs[0].plot(ejex, valores_minimos, 'b')
@@ -375,7 +359,7 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
     # Tercer gráfico: Valores promedio
     axs[2].plot(ejex, valores_promedio, 'g')
     axs[2].set_title('Valores Promedio')
-    axs[2].set_xlabel('Corrida')
+    axs[2].set_xlabel('nro de ciclo')
     axs[2].set_ylabel('Valores')
     axs[2].set_xlim(0, ciclos)
     axs[2].set_ylim(0, 1)
@@ -385,74 +369,9 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
 
     plt.tight_layout()
     plt.show()
-    
 
-    imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion)
-#crossover_mitad_mitad y mutacion_indice_aleatorio
+    imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion, cromosomas_maximos )
 
-crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio, 'x_rango', 'mitad_mitad', 'indice_aleatorio')
-crear_universo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio, 'x_rango', 'mitad_mitad', 'indice_aleatorio')
-
-crear_universo_con_elitismo(ruleta_normal, crossover_mitad_mitad, mutacion_indice_aleatorio, 'normal', 'mitad_mitad', 'indice_aleatorio')
-crear_universo(ruleta_normal, crossover_mitad_mitad, mutacion_indice_aleatorio, 'ruleta_normal', 'mitad_mitad', 'indice_aleatorio')
-
-crear_universo_con_elitismo(seleccion_torneo, crossover_mitad_mitad, mutacion_indice_aleatorio, 'torneo', 'mitad_mitad', 'indice_aleatorio')
-crear_universo(seleccion_torneo, crossover_mitad_mitad, mutacion_indice_aleatorio, 'torneo', 'mitad_mitad', 'indice_aleatorio')
-
-# #crossover_mitad_mitad y mutacion_mascara
-# crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_mascara)
-# crear_universo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_mascara)
-
-# crear_universo_con_elitismo(ruleta_normal, crossover_mitad_mitad, mutacion_mascara)
-# crear_universo(ruleta_normal, crossover_mitad_mitad, mutacion_mascara)
-
-# crear_universo_con_elitismo(seleccion_torneo, crossover_mitad_mitad, mutacion_mascara)
-# crear_universo(seleccion_torneo, crossover_mitad_mitad, mutacion_mascara)
-
-'''
-# #crossover_mitad_mitad y mutacion_mascara_probabilidad
-crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_mascara_probabilidad)
-crear_universo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_mascara_probabilidad)
-
-crear_universo_con_elitismo(ruleta_normal, crossover_mitad_mitad, mutacion_mascara_probabilidad)
-crear_universo(ruleta_normal, crossover_mitad_mitad, mutacion_mascara_probabilidad)
-
-crear_universo_con_elitismo(seleccion_torneo, crossover_mitad_mitad, mutacion_mascara_probabilidad)
-crear_universo(seleccion_torneo, crossover_mitad_mitad, mutacion_mascara_probabilidad)
-'''
-
-# #crossover_mascara y mutacion_indice_aleatorio
-# crear_universo_con_elitismo(ruleta_segun_rango, crossover_mascara, mutacion_indice_aleatorio)
-# crear_universo(ruleta_segun_rango, crossover_mascara, mutacion_indice_aleatorio)
-
-# crear_universo_con_elitismo(ruleta_normal, crossover_mascara, mutacion_indice_aleatorio)
-# crear_universo(ruleta_normal, crossover_mascara, mutacion_indice_aleatorio)
-
-# crear_universo_con_elitismo(seleccion_torneo, crossover_mascara, mutacion_indice_aleatorio)
-# crear_universo(seleccion_torneo, crossover_mascara, mutacion_indice_aleatorio)
-
-'''
-#crossover_mascara y mutacion_mascara
-crear_universo_con_elitismo(ruleta_segun_rango, crossover_mascara, mutacion_mascara)
-crear_universo(ruleta_segun_rango, crossover_mascara, mutacion_mascara)
-
-crear_universo_con_elitismo(ruleta_normal, crossover_mascara, mutacion_mascara)
-crear_universo(ruleta_normal, crossover_mascara, mutacion_mascara)
-
-crear_universo_con_elitismo(seleccion_torneo, crossover_mascara, mutacion_mascara)
-crear_universo(seleccion_torneo, crossover_mascara, mutacion_mascara)
-'''
-
-#crossover_mascara y mutacion_mascara_probabilidad
-# crear_universo_con_elitismo(ruleta_segun_rango, crossover_mascara, mutacion_mascara_probabilidad)
-# crear_universo(ruleta_segun_rango, crossover_mascara, mutacion_mascara_probabilidad)
-
-# crear_universo_con_elitismo(ruleta_normal, crossover_mascara, mutacion_mascara_probabilidad)
-#crear_universo(ruleta_normal, crossover_mascara, mutacion_mascara_probabilidad)
-
-# crear_universo_con_elitismo(seleccion_torneo, crossover_mascara, mutacion_mascara_probabilidad)
-# crear_universo(seleccion_torneo, crossover_mascara, mutacion_mascara_probabilidad)dad)
-# crear_universo(ruleta_normal, crossover_mascara, mutacion_mascara_probabilidad)
-
-# crear_universo_con_elitismo(seleccion_torneo, crossover_mascara, mutacion_mascara_probabilidad)
-# crear_universo(seleccion_torneo, crossover_mascara, mutacion_mascara_probabilidad)
+crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
+#crear_universo(ruleta_normal, crossover_mitad_mitad, mutacion_indice_aleatorio)
+#crear_universo(seleccion_torneo, crossover_mascara, mutacion_mascara_probabilidad)
