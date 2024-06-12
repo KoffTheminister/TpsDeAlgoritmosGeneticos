@@ -239,7 +239,7 @@ def imprimir(minimos,maximos,promedios,poblacion):
     print("El cromosoma con el valor mas alto es:   ", cromosoma)
 
 
-def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion):
+def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion, string_sele, string_cross, string_mut):
     ejex = list()
     valores_minimos = list()
     valores_maximos = list()
@@ -273,7 +273,7 @@ def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion):
 
     fig, axs = plt.subplots(1, 3, figsize=(12, 4))  # Reducimos el tamaño de la figura
 
-    fig.suptitle('Estadísticas Finales sin Elitismo', fontsize=16)
+    fig.suptitle(('Estadísticas Finales sin Elitismo, seleccion:',string_sele,',crossover:',string_cross,',mut:',string_mut), fontsize=16)
     # Primer gráfico: Valores mínimos
     axs[0].plot(ejex, valores_minimos, 'b')
     axs[0].set_title('Valores Mínimos')
@@ -312,7 +312,7 @@ def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion):
 
     imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion)
 #funcion para crear un universo con especificos metodos de desarrollo y que hace uso del elitismo
-def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutacion):
+def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutacion, string_sele, string_cross, string_mut):
     ejex = list()
     valores_minimos = list()
     valores_maximos = list()
@@ -348,7 +348,7 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
 
 
     fig, axs = plt.subplots(1, 3, figsize=(12, 4))  # Reducimos el tamaño de la figura
-    fig.suptitle('Estadísticas Finales usando Elitismo', fontsize=16)
+    fig.suptitle(('Estadísticas Finales usando Elitismo, seleccion:',string_sele,',crossover:',string_cross,',mut:',string_mut), fontsize=16)
 
     # Primer gráfico: Valores mínimos
     axs[0].plot(ejex, valores_minimos, 'b')
@@ -385,16 +385,19 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
 
     plt.tight_layout()
     plt.show()
+    
 
+    imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion)
 #crossover_mitad_mitad y mutacion_indice_aleatorio
-#crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
-#crear_universo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
 
-#crear_universo_con_elitismo(ruleta_normal, crossover_mitad_mitad, mutacion_indice_aleatorio)
-#crear_universo(ruleta_normal, crossover_mitad_mitad, mutacion_indice_aleatorio)
+crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio, 'x_rango', 'mitad_mitad', 'indice_aleatorio')
+crear_universo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio, 'x_rango', 'mitad_mitad', 'indice_aleatorio')
 
-#crear_universo_con_elitismo(seleccion_torneo, crossover_mitad_mitad, mutacion_indice_aleatorio)
-crear_universo(seleccion_torneo, crossover_mitad_mitad, mutacion_indice_aleatorio)
+crear_universo_con_elitismo(ruleta_normal, crossover_mitad_mitad, mutacion_indice_aleatorio, 'normal', 'mitad_mitad', 'indice_aleatorio')
+crear_universo(ruleta_normal, crossover_mitad_mitad, mutacion_indice_aleatorio, 'ruleta_normal', 'mitad_mitad', 'indice_aleatorio')
+
+crear_universo_con_elitismo(seleccion_torneo, crossover_mitad_mitad, mutacion_indice_aleatorio, 'torneo', 'mitad_mitad', 'indice_aleatorio')
+crear_universo(seleccion_torneo, crossover_mitad_mitad, mutacion_indice_aleatorio, 'torneo', 'mitad_mitad', 'indice_aleatorio')
 
 # #crossover_mitad_mitad y mutacion_mascara
 # crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_mascara)
