@@ -8,7 +8,7 @@ tam_poblacion = 10
 genes = 30
 prob_crossover = 0.75
 prob_mutacion = 0.05
-ciclos = 200  #20 o 100 o 200
+ciclos = 100  #20 o 100 o 200
 tam_torneo = 2
 porcentaje_elitismo = 20 #porciento
 cant_elite = porcentaje_elitismo*tam_poblacion/100
@@ -40,18 +40,20 @@ def fitness(cromosoma, tot):
 
 def calcular_total(cromosomas):
     tot = 0
-    for cromosoma in cromosomas:
-        tot += fun_obj(cromosoma)
+    for e in range(tam_poblacion):
+        tot += fun_obj(cromosomas[e])
     return tot
 
 def ordenar(cromosomas):
     tot = calcular_total(cromosomas)
+    aux = []
     for i in range(tam_poblacion):
         for j in range(i, tam_poblacion):
             if(fitness(cromosomas[i], tot) > fitness(cromosomas[j],tot)):
                 aux = cromosomas[j]
                 cromosomas[j] = cromosomas[i]
                 cromosomas[i] = aux
+                aux=[]
     return cromosomas
 
 #selecciones
@@ -122,9 +124,10 @@ def seleccion_torneo(cromosomas):
 
 #funcion para obtener padres
 def obtenerpadres(indices, cromosomes, indiceDePareja): 
-    padres = list()  
+    padres = list()
+    padres= [[],[]]  
     for i in range(2):
-        padres.append(cromosomes[indices[indiceDePareja][i-1]])
+        padres[i]=cromosomes[indices[indiceDePareja][i-1]].copy()
     return padres
 
 #crossovers
@@ -150,13 +153,13 @@ def crossover_mascara(padres, poblacion_siguiente):
             i = 0
             for i in range(genes):
                 if(mascara[i] == 1):
-                    hijo.append(padres[0][i])
+                    hijo.append(padres[0][i]).copy()
                 else:
-                    hijo.append(padres[1][i])
+                    hijo.append(padres[1][i]).cpoy()
             poblacion_siguiente.append(hijo)
     else:
-        poblacion_siguiente.append(padres[0])
-        poblacion_siguiente.append(padres[1])
+        poblacion_siguiente.append(padres[0]).copy()
+        poblacion_siguiente.append(padres[1]).copy()
 
 #mutaciones
 def mutacion_indice_aleatorio(individuo):
@@ -197,11 +200,9 @@ def imprimir(minimos,maximos,promedios,poblacion, cromosomas):
     valor_maximo = 0
     print("Ciclo       Valor minimo       Valor maximo       Valor promedio        Cromosoma Maximo  \n")
     for i in range(ciclos):
-        '''
         print(i+1, "          ", round(minimos[i],6),"            ",maximos[i],"            ", round(promedios[i],6))
         print(cromosomas[i])
-        '''
-        print(maximos[i])
+        print("El valor del cromosoma mas alto es: ", fun_obj(cromosomas[i]))
     for i in range(tam_poblacion):
         if fun_obj(poblacion[i]) > valor_maximo:
                 valor_maximo = fun_obj(poblacion[i])
@@ -283,10 +284,10 @@ def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion):
     plt.show()
 
     imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion, cromosomas_maximos)
-
 #funcion para crear un universo con especificos metodos de desarrollo y que hace uso del elitismo
 def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutacion):
     ejex = list()
+    error = 0
     valores_minimos = list()
     valores_maximos = list()
     valores_promedio = list()
@@ -294,41 +295,43 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
     poblacion = crear_poblacion(genes, tam_poblacion)
     erroresprimero = 0
     erroressegundo = 0
-
+    tot_sum =0
+    poblacion = ordenar(poblacion).copy()
+    for i in range(int(tam_poblacion)):
+            tot_sum += fun_obj(poblacion[i])
+    promedio = tot_sum/tam_poblacion
+    print("Poblacion inicial:  ")
+    print("Valor minimo          Valor maximo        Valor promedio         Cromosoma Maximo  \n")
+    print( round(fun_obj(poblacion[0]),6),"            ",fun_obj(poblacion[9]),"            ", round(promedio,6))
+    print(poblacion[9])
     for j in range(ciclos):
         ejex.append(j)
-        valor_promedio = 0
         valor_minimo = 1
-        valor_maximo = 0
         tot_sum = 0
-        poblacion2 = list()
-        poblacion = ordenar(poblacion)
-        padrecitos = metodo_seleccion(poblacion)
-        for k in range(int(tam_poblacion/2)):
+        auxiliar= []
+        poblacion2 = []
+        poblacion = ordenar(poblacion).copy()
+        auxiliar = [poblacion[8], poblacion[9]].copy()
+        padrecitos = metodo_seleccion(poblacion).copy()
+        for k in range(int((tam_poblacion - cant_elite)/2)):
             metodo_crossover(obtenerpadres(padrecitos,poblacion,k), poblacion2)
-        for p in range(tam_poblacion):
+        for p in range(tam_poblacion-2):
             poblacion2[p] = metodo_mutacion(poblacion2[p])
-        
-        poblacion2[0] = poblacion[9]
-        poblacion2[1] = poblacion[8]
-        
-        poblacion2 = ordenar(poblacion2)
-        
-        valor_maximo = fun_obj(poblacion2[9])
+        poblacion2.extend(auxiliar)
+        poblacion2 = ordenar(poblacion2).copy()
         cromosomas_maximos.append(poblacion2[9])
         valor_minimo = fun_obj(poblacion2[0])
         for i in range(int(tam_poblacion)):
             tot_sum += fun_obj(poblacion2[i])
+        poblacion2 = ordenar(poblacion2).copy()
+        print("Ciclo       Valor minimo          Valor maximo        Valor promedio         Cromosoma Maximo  \n")
         promedio = tot_sum/tam_poblacion
+        print(j+1, "          ", round(valor_minimo,6),"            ",fun_obj(poblacion2[9]),"            ", round(promedio,6))
+        print(poblacion2[9])
         valores_minimos.append(valor_minimo)
-        valores_maximos.append(valor_maximo)
+        valores_maximos.append(fun_obj(poblacion2[9]))
         valores_promedio.append(promedio)
-        poblacion = poblacion2
-        
-        # Verificar si el valor máximo disminuye en algún ciclo
-        if j > 0 and valores_maximos[j] < valores_maximos[j - 1]:
-            print(f"El valor máximo disminuyó en el ciclo {j}")
-
+        poblacion = poblacion2.copy()
     numeros = int(ciclos/10)
 
     fig, axs = plt.subplots(1, 3, figsize=(12, 4))  # Reducimos el tamaño de la figura
@@ -370,8 +373,8 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
     plt.tight_layout()
     plt.show()
 
-    imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion, cromosomas_maximos )
+
+    #imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion, cromosomas_maximos )
 
 crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
 #crear_universo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
-#crear_universo(seleccion_torneo, crossover_mitad_mitad, mutacion_indice_aleatorio)
