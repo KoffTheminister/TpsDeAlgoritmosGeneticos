@@ -1,3 +1,4 @@
+#librerias
 import random
 import matplotlib
 import matplotlib.pyplot as plt
@@ -39,18 +40,20 @@ def fitness(cromosoma, tot):
 
 def calcular_total(cromosomas):
     tot = 0
-    for cromosoma in cromosomas:
-        tot += fun_obj(cromosoma)
+    for e in range(tam_poblacion):
+        tot += fun_obj(cromosomas[e])
     return tot
 
 def ordenar(cromosomas):
     tot = calcular_total(cromosomas)
+    aux = []
     for i in range(tam_poblacion):
         for j in range(i, tam_poblacion):
             if(fitness(cromosomas[i], tot) > fitness(cromosomas[j],tot)):
                 aux = cromosomas[j]
                 cromosomas[j] = cromosomas[i]
                 cromosomas[i] = aux
+                aux=[]
     return cromosomas
 
 #selecciones
@@ -121,9 +124,10 @@ def seleccion_torneo(cromosomas):
 
 #funcion para obtener padres
 def obtenerpadres(indices, cromosomes, indiceDePareja): 
-    padres = list()  
+    padres = list()
+    padres= [[],[]]  
     for i in range(2):
-        padres.append(cromosomes[indices[indiceDePareja][i-1]])
+        padres[i]=cromosomes[indices[indiceDePareja][i-1]].copy()
     return padres
 
 #crossovers
@@ -189,27 +193,24 @@ def mutacion_mascara_probabilidad(individuo):
                 individuo[i] = 1 - individuo[i]
     return individuo
 
-
-
-
-def imprimir(minimos,maximos,promedios,poblacion, cromosomas_mayores):
+#funcion utilizada para crear las tablas de valores
+def imprimir(minimos,maximos,promedios,poblacion, cromosomas,cromosoma_maximo):
     valor_maximo = 0
-    cromosoma_maximo = None
-    print("Ciclo       Valor minimo       Valor maximo       Valor promedio        Cromosoma Maximo  \n")
+    print("Ciclo       Valor minimo          Valor maximo       Valor promedio               Cromosoma Maximo  \n")
     for i in range(ciclos):
-        print(maximos[i])
-        if (valor_maximo < maximos[i]):
-            valor_maximo = maximos[i]
-            cromosoma_maximo = cromosomas_mayores[i]
-    print("El cromosoma con el valor mas alto es:   ", cromosoma_maximo)
+        print(i+1, "          ", round(minimos[i],6),"            ",round(maximos[i],6),"            ", round(promedios[i],6),"             ",cromosomas[i])
+        if (maximos[i] > valor_maximo):
+                valor_maximo = maximos[i]
+    print("El cromosoma con valor maximo fue: ", cromosoma_maximo)
 
-
+#funcion para crear un universo con especificos metodos de desarrollo
 def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion):
     ejex = list()
     valores_minimos = list()
     valores_maximos = list()
     valores_promedio = list()
     cromosomas_maximos = list()
+    cromosoma_maximo = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     poblacion = crear_poblacion(genes, tam_poblacion)
     for j in range(ciclos):
         ejex.append(j)
@@ -219,18 +220,18 @@ def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion):
         tot_sum = 0
         poblacion2 = list()
         padrecitos = metodo_seleccion(poblacion)
-
         for k in range(int(tam_poblacion / 2)):
             metodo_crossover(obtenerpadres(padrecitos, poblacion, k), poblacion2)
         for p in range(tam_poblacion):
             poblacion2[p] = metodo_mutacion(poblacion2[p])
-
         poblacion2 = ordenar(poblacion2)
         valor_maximo = fun_obj(poblacion2[9])
         cromosomas_maximos.append(poblacion2[9])
         valor_minimo = fun_obj(poblacion2[0])
         for i in range(int(tam_poblacion)):
             tot_sum += fun_obj(poblacion2[i])
+        if(fun_obj(poblacion2[9]) > fun_obj(cromosoma_maximo)):
+            cromosoma_maximo = poblacion2[9]
         promedio = tot_sum / tam_poblacion
         valores_minimos.append(valor_minimo)
         valores_maximos.append(valor_maximo)
@@ -279,56 +280,57 @@ def crear_universo(metodo_seleccion, metodo_crossover, metodo_mutacion):
     plt.tight_layout()
     plt.show()
 
-    imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion, cromosomas_maximos)
+    imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion, cromosomas_maximos, cromosoma_maximo)
 
 #funcion para crear un universo con especificos metodos de desarrollo y que hace uso del elitismo
 def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutacion):
     ejex = list()
+    error = 0
     valores_minimos = list()
     valores_maximos = list()
     valores_promedio = list()
     cromosomas_maximos = list()
+    cromosoma_maximo = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     poblacion = crear_poblacion(genes, tam_poblacion)
-    erroresprimero = 0
-    erroressegundo = 0
-    valor_maximo_anterior = 0
-    cromosoma_maximo_anterior = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    tot_sum =0
+    poblacion = ordenar(poblacion).copy()
+    for i in range(int(tam_poblacion)):
+            tot_sum += fun_obj(poblacion[i])
+    promedio = tot_sum/tam_poblacion
+    print("Poblacion inicial:  ")
+    print("Valor minimo          Valor maximo        Valor promedio         Cromosoma Maximo  \n")
+    print( round(fun_obj(poblacion[0]),6),"            ",fun_obj(poblacion[9]),"            ", round(promedio,6),"           ",poblacion[9])
     for j in range(ciclos):
         ejex.append(j)
-        valor_promedio = 0
         valor_minimo = 1
-        valor_maximo = 0
         tot_sum = 0
-        poblacion2 = list()
-        poblacion = ordenar(poblacion)
-        padrecitos = metodo_seleccion(poblacion)
+        auxiliar= []
+        poblacion2 = []
+        poblacion = ordenar(poblacion).copy()
+        auxiliar = [poblacion[8], poblacion[9]].copy()
+        padrecitos = metodo_seleccion(poblacion).copy()
 
         for k in range(int((tam_poblacion - cant_elite)/2)):
             metodo_crossover(obtenerpadres(padrecitos,poblacion,k), poblacion2)
 
-        for p in range(int(tam_poblacion - cant_elite)):
+        for p in range(tam_poblacion-2):
             poblacion2[p] = metodo_mutacion(poblacion2[p])
-        
-        for i in range(int(cant_elite)):
-            poblacion2.append(poblacion[int(tam_poblacion - cant_elite + i)])
-        
-        poblacion2 = ordenar(poblacion2)
-        
-        if(fun_obj(poblacion2[9]) < fun_obj(cromosoma_maximo_anterior)):
-            poblacion2[9] = cromosoma_maximo_anterior
-        else:
-            cromosoma_maximo_anterior = poblacion2[9]
-            
+
+        poblacion2.extend(auxiliar)
+        poblacion2 = ordenar(poblacion2).copy()
         cromosomas_maximos.append(poblacion2[9])
         valor_minimo = fun_obj(poblacion2[0])
         for i in range(int(tam_poblacion)):
             tot_sum += fun_obj(poblacion2[i])
+        poblacion2 = ordenar(poblacion2).copy()
+        if(fun_obj(poblacion2[9]) > fun_obj(cromosoma_maximo)):
+            cromosoma_maximo = poblacion2[9]
         promedio = tot_sum/tam_poblacion
         valores_minimos.append(valor_minimo)
         valores_maximos.append(fun_obj(poblacion2[9]))
         valores_promedio.append(promedio)
-        poblacion = poblacion2
 
+        poblacion = poblacion2.copy()
     numeros = int(ciclos/10)
 
     fig, axs = plt.subplots(1, 3, figsize=(12, 4))  # Reducimos el tamaño de la figura
@@ -370,8 +372,9 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
     plt.tight_layout()
     plt.show()
 
-    imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion, cromosomas_maximos )
 
-crear_universo_con_elitismo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
-#crear_universo(ruleta_normal, crossover_mitad_mitad, mutacion_indice_aleatorio)
-#crear_universo(seleccion_torneo, crossover_mascara, mutacion_mascara_probabilidad)
+    imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion, cromosomas_maximos, cromosoma_maximo)
+
+#crear_universo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
+#crear_universo(seleccion_torneo, crossover_mascara, mutacion_indice_aleatorio)
+crear_universo(ruleta_normal, crossover_mitad_mitad, mutacion_mascara_probabilidad)
