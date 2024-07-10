@@ -9,7 +9,7 @@ genes = 30
 prob_crossover = 0.75
 prob_mutacion = 0.05
 ciclos = 200  #20 o 100 o 200
-tam_torneo = 2
+tam_torneo = 2 #cambiar a porcentaje
 porcentaje_elitismo = 20 #porciento
 cant_elite = porcentaje_elitismo*tam_poblacion/100
 
@@ -72,7 +72,7 @@ def ruleta_segun_rango(cromosomas):
             condicion = True
             while(condicion):
                 totRuleta += ((index + 1)/totsum)*100
-                if(totRuleta >= flecha and indicesDeLosPadres[j][0] != index):
+                if(totRuleta >= flecha and indicesDeLosPadres[j][0] != index):  #podemos permitir repeticion de padres en pareja
                     indicesDeLosPadres[j][i] = index
                     condicion = False
                 elif(totRuleta >= flecha and indicesDeLosPadres[j][0] == index):
@@ -95,7 +95,7 @@ def ruleta_normal(cromosomas):
             condicion = True
             while(condicion):
                 totRuleta += (fitness(cromosomas[index], total))*100
-                if(totRuleta >= flecha and indicesDeLosPadres[j][0] != index):
+                if(totRuleta >= flecha and indicesDeLosPadres[j][0] != index): #podemos permitir repeticion de padres en pareja
                     indicesDeLosPadres[j][i] = index
                     condicion = False
                 elif(totRuleta >= flecha and indicesDeLosPadres[j][0] == index):
@@ -114,7 +114,7 @@ def seleccion_torneo(cromosomas):
             mejor_indice = 0
             mejor_fitness = 0
             for j in range(tam_torneo):
-                indice_elegido = random.randint(0,9)        
+                indice_elegido = random.randint(0,9)
                 if (fitness(cromosomas[indice_elegido],calcular_total(cromosomas)) > mejor_fitness):
                     mejor_fitness = fitness(cromosomas[indice_elegido],calcular_total(cromosomas))
                     mejor_indice = indice_elegido
@@ -127,7 +127,7 @@ def obtenerpadres(indices, cromosomes, indiceDePareja):
     padres = list()
     padres= [[],[]]  
     for i in range(2):
-        padres[i]=cromosomes[indices[indiceDePareja][i-1]].copy()
+        padres[i] = cromosomes[indices[indiceDePareja][i-1]].copy()
     return padres
 
 #crossovers
@@ -194,7 +194,7 @@ def mutacion_mascara_probabilidad(individuo):
     return individuo
 
 #funcion utilizada para crear las tablas de valores
-def imprimir(minimos,maximos,promedios,poblacion, cromosomas,cromosoma_maximo):
+def imprimir(minimos,maximos,promedios,poblacion,cromosomas,cromosoma_maximo):
     valor_maximo = 0
     print("Ciclo       Valor minimo          Valor maximo       Valor promedio               Cromosoma Maximo  \n")
     for i in range(ciclos):
@@ -376,5 +376,5 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
     imprimir(valores_minimos, valores_maximos, valores_promedio, poblacion, cromosomas_maximos, cromosoma_maximo)
 
 #crear_universo(ruleta_segun_rango, crossover_mitad_mitad, mutacion_indice_aleatorio)
-#crear_universo(seleccion_torneo, crossover_mascara, mutacion_indice_aleatorio)
-crear_universo(ruleta_normal, crossover_mitad_mitad, mutacion_mascara_probabilidad)
+crear_universo_con_elitismo(ruleta_normal, crossover_mascara, mutacion_indice_aleatorio)
+#crear_universo(ruleta_normal, crossover_mascara, mutacion_mascara_probabilidad)
