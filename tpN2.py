@@ -44,7 +44,7 @@ def generar_exhaustiva():
             numfin.append(num[k])
         else:
             numfin= num
-        if(vol_total(num) <= volMaximo):
+        if(vol_total(numfin) <= volMaximo):
             listasPosibles.append(numfin)
         listas.append(numfin)
 
@@ -81,7 +81,7 @@ def valorProporcional():
     n = len(valoresProporcionales)
     for i in range(n):
         for j in range(0, n - i - 1):
-            if (valoresProporcionales[j][1] > valoresProporcionales[j + 1][1]):
+            if (valoresProporcionales[j][1] < valoresProporcionales[j + 1][1]):
                 valoresProporcionales[j], valoresProporcionales[j + 1] = valoresProporcionales[j + 1], valoresProporcionales[j]
             
     lock = True
@@ -162,7 +162,7 @@ def generar_exhaustiva_3():
             numfin.append(num[k])
         else:
             numfin= num
-        if(vol_total_3(num) <= pesoMaximo):
+        if(vol_total_3(numfin) <= pesoMaximo):
             listasPosibles_3.append(numfin)
         listas_3.append(numfin)
 
@@ -173,11 +173,12 @@ def valorProporcional_3():
    
     #ordenamiento
     n = len(valoresProporcionales_3)
+
     for i in range(n):
         for j in range(0, n - i - 1):
-            if (valoresProporcionales_3[j][1] > valoresProporcionales_3[j + 1][1]):
+            if (valoresProporcionales_3[j][1] < valoresProporcionales_3[j + 1][1]):
                 valoresProporcionales_3[j], valoresProporcionales_3[j + 1] = valoresProporcionales_3[j + 1], valoresProporcionales_3[j]
-            
+
     lock = True
     indice = 0
     lista3 = ['0','0','0']
@@ -246,6 +247,7 @@ print('exhaustiva')
 print('Todas las listas posibles:')
 for i, (lista_objetos, total) in enumerate(zip(listas_de_objetos, totales)):
     print(f"Lista {i + 1}: {lista_objetos} - Volumen Total: {total[0]}, Precio Total: {total[1]}")
+
 
 #greedy
 listas_de_objetos, totales = armar_listas_de_objeto_greedy(valorProporcional())
