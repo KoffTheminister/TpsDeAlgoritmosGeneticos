@@ -6,7 +6,6 @@ listas = []
 elementos = []
 cont_tot = 0
 
-
 def precio_total(lista):
     tot = 0
     for i in range(len(lista)):
@@ -32,7 +31,7 @@ def ordenamiento(arr):
 #Exaustiva
 def generar_exhaustiva():
     for i in range(1024):
-        numfin=list()
+        numfin = list()
         binario_sin_prefijo = bin(i)[2:]
         num = str(binario_sin_prefijo)
         num = list(binario_sin_prefijo)
