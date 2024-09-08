@@ -10,6 +10,7 @@ import PIL.Image
 from pathlib import Path
 from sklearn.preprocessing import RobustScaler
 
+
 vgg16 = tensorflow.keras.applications.VGG16(
     include_top=True,
     weights='imagenet',
@@ -48,7 +49,6 @@ df1 = pd.DataFrame(features)
 classificatione = np.ones(canmuestras)
 df1['Y'] = classificatione
 
-
 dir_path = '/home/tenet7750/Desktop/vsc/tpsAG/ims_con_quemaduras/ims_con_quemaduras'  # poner directorio donde estan las imagenes
 features = []
 for filesito in os.scandir(dir_path):
@@ -63,9 +63,11 @@ df2['Y'] = classificatione
 
 df_final = pd.concat([df1, df2])
 df_final = df_final.reset_index(drop=True)
+
 print(df_final)
 
 df_final.to_csv("dataframe_preparado.csv")
+
 
 '''
 item = df_final.iloc[3].to_frame().T

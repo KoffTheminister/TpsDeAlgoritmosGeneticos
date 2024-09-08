@@ -73,6 +73,7 @@ def crear_generacion_inicial(tamano_generacion, funciones_de_activacion, minimo_
 def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activacion, minimo_TLUs_en_hidden_layers_adicionales, 
                    maximo_TLUs_en_hidden_layers_adicionales, numero_de_epochs, cantidad_elitismo):
     dataframe_preparado = pd.read_csv("dataframe_preparado.csv")
+    del dataframe_preparado['Unnamed: 0']
     generacion = crear_generacion_inicial(tamano_generacion, funciones_de_activacion, minimo_TLUs_en_hidden_layers_adicionales, 
                                           maximo_TLUs_en_hidden_layers_adicionales)
     len_df = int(len(dataframe_preparado.index))
@@ -88,7 +89,16 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
             generacion[i].fit(train_set_x, train_set_y, epochs = 5, batch_size = 32) # el batch size es estatico '''numero_de_epochs'''
             test_set_y, test_set_x = dividir_features_y_clasificacion(test_set)
             predicted_ys = generacion[i].predict(test_set_x)
-            resulted_f1_score = calcular_f1_score(test_set_y, predicted_ys)
+
+            len_predicted = round(len(predicted_ys)) # reevaluar desde aca
+            true_predictions = []
+            for k in range(len_predicted):
+                if(predicted_ys[k] < 0.5):
+                    true_predictions.append(0)
+                else:
+                    true_predictions.append(1) # hasta aca
+
+            resulted_f1_score = calcular_f1_score(test_set_y, true_predictions)
             orden_f1_score.append([i, resulted_f1_score])
         orden_f1_score = ordenar(orden_f1_score)
         auxiliar.clear()
@@ -98,9 +108,9 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
             orden_f1_score.pop(k)
         k = 0
         lista_para_crossover = ruleta_segun_rango(orden_f1_score)
-        while(k <= cant_de_crossovers):
-            model_a, model_b = crossover_mitad_mitad(orden_f1_score[lista_para_crossover[k]], orden_f1_score[lista_para_crossover[k + 1]])
-            k += 2
+        #while(k <= cant_de_crossovers):
+        #    model_a, model_b = crossover_mitad_mitad(orden_f1_score[lista_para_crossover[k]], orden_f1_score[lista_para_crossover[k + 1]])
+        #    k += 2
         
 
         
@@ -167,11 +177,11 @@ def dividir_features_y_clasificacion(df):
     set_x = df.drop(['Y'], axis = 1)  
     return set_y, set_x
 
-def particionar_dataset(dataset, longitud_dataset, longitud_train, longitud_val, longitud_test):
+def particionar_dataset(original_dataset, longitud_dataset, longitud_train, longitud_val, longitud_test):
+    dataset = original_dataset.copy()
     df_train = pd.DataFrame(columns = dataset.columns)
     df_val = pd.DataFrame(columns = dataset.columns)
     df_test = pd.DataFrame(columns = dataset.columns)
-    print(dataset)
     for i in range(longitud_train):
         j = random.randint(0, longitud_dataset - 1)
         item = dataset.iloc[j].to_frame().T
@@ -208,24 +218,20 @@ def particionar_dataset(dataset, longitud_dataset, longitud_train, longitud_val,
 
     return df_train, df_val, df_test
 
-
-
 def calcular_f1_score(y_verdaderas, y_predicciones):
     conf_matrix = [[0, 0], [0, 0]]
-
     for i in range(int(len(y_verdaderas))):
-
-        if(y_verdaderas[i] == 1):
-            if(y_verdaderas == y_predicciones):
+        if(y_verdaderas.iloc[i].loc['Y'] == 1):
+            if(y_verdaderas.iloc[i].loc['Y'] == y_predicciones[i]):
                 conf_matrix[0][0] += 1
             else:
                 conf_matrix[0][1] += 1
         else:
-            if(y_verdaderas == y_predicciones):
+            if(y_verdaderas.iloc[i].loc['Y'] == y_predicciones[i]):
                 conf_matrix[1][1] += 1
             else:
-                conf_matrix[1][0] += 1     
-
+                conf_matrix[1][0] += 1   
+    print(conf_matrix)
     precision = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[0][1])
     exhaustion = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[1][0])
     f1_score = (2*precision*exhaustion)/(precision + exhaustion)
