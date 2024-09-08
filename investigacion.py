@@ -93,7 +93,7 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
             len_predicted = round(len(predicted_ys)) # reevaluar desde aca
             true_predictions = []
             for k in range(len_predicted):
-                if(predicted_ys[k] < 0.5):
+                if(predicted_ys[k] < 0):
                     true_predictions.append(0)
                 else:
                     true_predictions.append(1) # hasta aca
@@ -102,7 +102,7 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
             orden_f1_score.append([i, resulted_f1_score])
         orden_f1_score = ordenar(orden_f1_score)
         auxiliar.clear()
-        for k in range(cantidad_elitismo):
+        for k in range(round(cantidad_elitismo)):
             auxiliar.append(generacion[orden_f1_score[k][0]].copy())
             generacion.pop(orden_f1_score[k][0])
             orden_f1_score.pop(k)
@@ -232,9 +232,18 @@ def calcular_f1_score(y_verdaderas, y_predicciones):
             else:
                 conf_matrix[1][0] += 1   
     print(conf_matrix)
-    precision = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[0][1])
-    exhaustion = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[1][0])
-    f1_score = (2*precision*exhaustion)/(precision + exhaustion)
+    if(conf_matrix[0][0] != 0 and conf_matrix[0][1] != 0):
+        precision = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[0][1])
+    else:
+        precision = 0
+    if(conf_matrix[0][0] != 0 and conf_matrix[1][0] != 0):
+        exhaustion = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[1][0])
+    else:
+        exhaustion = 0
+    if(precision != 0 and exhaustion != 0):
+        f1_score = (2*precision*exhaustion)/(precision + exhaustion)
+    else:
+        f1_score = 0
     
     return f1_score
 
