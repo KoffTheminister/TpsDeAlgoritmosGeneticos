@@ -13,7 +13,7 @@ from pathlib import Path
 import random
 
 #variables
-cant_generaciones = 50
+cant_generaciones = 2
 tam_generacion = 20
 min_TLUs_en_hidden_layers_adicionales = 35
 max_TLUs_en_hidden_layers_adicionales = 70
@@ -53,7 +53,7 @@ def crear_generacion_inicial(tamano_generacion, funciones_de_activacion, minimo_
         model_i = Sequential()
         index_de_func_act = random.randint(0, 2)
         cant_TLUs_de_primera_hidden_layer = random.randint(100, 130)
-        model_i.add(Dense(cant_TLUs_de_primera_hidden_layer, activation = funciones_de_activacion[index_de_func_act], input_shape = (1000,)))   
+        model_i.add(tensorflow.keras.layers.Dense(cant_TLUs_de_primera_hidden_layer, activation = funciones_de_activacion[index_de_func_act], input_shape = (1000,)))   
         cant_adicional_de_hidden_layers = random.randint(2,3)
         cant_TLUs_de_hidden_layer_anterior = 71
 
@@ -64,9 +64,9 @@ def crear_generacion_inicial(tamano_generacion, funciones_de_activacion, minimo_
                 cant_TLUs_de_hidden_layer = random.randint(minimo_TLUs_en_hidden_layers_adicionales, maximo_TLUs_en_hidden_layers_adicionales)
             cant_TLUs_de_hidden_layer_anterior = cant_TLUs_de_hidden_layer
             index_de_func_act = random.randint(0, 2)
-            model_i.add(Dense(cant_TLUs_de_hidden_layer, activation = funciones_de_activacion[index_de_func_act]))
+            model_i.add(tensorflow.keras.layers.Dense(cant_TLUs_de_hidden_layer, activation = funciones_de_activacion[index_de_func_act]))
        
-        model_i.add(Dense(1, activation = 'tanh')) # la output layer es la misma para todos los cromosomas. la funcion de activacion para esta capa NO cambia.
+        model_i.add(tensorflow.keras.layers.Dense(1, activation = 'tanh')) # la output layer es la misma para todos los cromosomas. la funcion de activacion para esta capa NO cambia.
         generacion_inicial.append(model_i)
   
     return generacion_inicial
@@ -83,14 +83,17 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
     cant_de_crossovers = int((tamano_generacion - cantidad_elitismo)/2)
     for i in range(cantidad_generaciones):
         for j in range(tamano_generacion):
-            generacion[i].compile(optimizer = 'adam', loss = 'categorical_crossentropy', metrics = ['accuracy'], run_eagerly = True)
+            generacion[i].compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'], run_eagerly = True)
             train_set, val_set, test_set = particionar_dataset(dataframe_preparado, len_df, int(round(len_df*70/100)), int(round(len_df*20/100)), 
                                                                int(round(len_df*10/100)))
             train_set_y, train_set_x = dividir_features_y_clasificacion(train_set)
+            val_set_y, val_set_x = dividir_features_y_clasificacion(val_set)
             generacion[i].fit(train_set_x, train_set_y, epochs = 5, batch_size = 32) # el batch size es estatico '''numero_de_epochs'''
+            generacion[i].evaluate(train_set_x, train_set_y, batch_size = 32)
             test_set_y, test_set_x = dividir_features_y_clasificacion(test_set)
             predicted_ys = generacion[i].predict(test_set_x)
-
+            print(test_set_y)
+            print(predicted_ys)
             len_predicted = round(len(predicted_ys)) # reevaluar desde aca
             true_predictions = []
             for k in range(len_predicted):
@@ -98,21 +101,31 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
                     true_predictions.append(0)
                 else:
                     true_predictions.append(1) # hasta aca
-
             resulted_f1_score = calcular_f1_score(test_set_y, true_predictions)
-            orden_f1_score.append([i, resulted_f1_score])
+            orden_f1_score.append([j, resulted_f1_score])
         orden_f1_score = ordenar(orden_f1_score)
         auxiliar.clear()
         for k in range(round(cantidad_elitismo)):
-            auxiliar.append(generacion[orden_f1_score[k][0]].copy())
+            auxiliar.append(generacion[orden_f1_score[k][0]]).copy()
             generacion.pop(orden_f1_score[k][0])
             orden_f1_score.pop(k)
         k = 0
-        lista_para_crossover = ruleta_segun_rango(orden_f1_score)
-        while(k <= cant_de_crossovers):
-            model_a, model_b = crossover_mitad_mitad(orden_f1_score[lista_para_crossover[k]], orden_f1_score[lista_para_crossover[k + 1]])
-            k += 2
+        print("Orden de f1 score")
+        for i in range(len(orden_f1_score)):
+            print(orden_f1_score[i])
         
+        lista_para_crossover = ruleta_segun_rango(orden_f1_score)
+        while(k <= len(lista_para_crossover)):
+            print(k)
+            generacion[orden_f1_score[lista_para_crossover[k]][0]].summary()
+            generacion[orden_f1_score[lista_para_crossover[k + 1]][0]].summary()
+            model_a, model_b = crossover_mitad_mitad(generacion[orden_f1_score[lista_para_crossover[k]][0]], generacion[orden_f1_score[lista_para_crossover[k + 1]][0]])
+            k += 2
+            auxiliar.append(model_a)
+            auxiliar.append(model_b)
+        print("Final de ciclo")
+        print(len(auxiliar))
+        generacion = auxiliar
 
         
 
@@ -122,37 +135,56 @@ def crossover_mitad_mitad(model_a, model_b):
     new_model_b = Sequential()
 
     # Generar puntos de corte para ambos modelos
-    corte_a = random.randint(1, len(model_a.layers) - 2)  # Evitar la capa de entrada y salida
-    corte_b = random.randint(1, len(model_b.layers) - 2)  # Evitar la capa de entrada y salida
-
+    corte_a = random.randint(1,len(model_a.layers) - 1)  # Evitar la capa de entrada y salida
+    corte_b = random.randint(1,len(model_b.layers) - 1)  # Evitar la capa de entrada y salida
+    print(model_b.layers[0].input)
+    print(model_b.layers[0].output)
+    print(model_a.layers[0].input)
+    print(model_a.layers[0].output)
     # Hijo 1: primeras capas de model_b hasta el punto de corte_b, luego capas de model_a
     for i in range(corte_b):
+        print(i)
         capa = model_b.layers[i]
+        print(model_b.layers[i].input)
+        print(model_b.layers[i].output)
         new_model_a.add(capa)
 
-    for i in range(corte_a, len(model_a.layers) - 1):
-        capa = model_a.layers[i]
-        new_model_a.add(capa)
+    for i in range(corte_a, len(model_a.layers)):
+        if((model_b.layers[corte_b ].output.shape[1] < model_a.layers[i].input.shape[1]) and i == corte_a ):
+            print(i)
+            print(model_b.layers[corte_b].output.shape[1])
+            capa = model_a.layers[i]
+            print(model_a.layers[i].input)
+            print(model_a.layers[i].output)
+            new_model_a.add(capa)
 
     # Hijo 2: primeras capas de model_a hasta el punto de corte_a, luego capas de model_b
     for i in range(corte_a):
+        print(i)
+        print(model_a.layers[i].input)
+        print(model_a.layers[i].output)
         capa = model_a.layers[i]
         new_model_b.add(capa)
 
-    for i in range(corte_b, len(model_b.layers) - 1):
-        capa = model_b.layers[i]
-        new_model_b.add(capa)
+    for i in range(corte_b, len(model_b.layers) ):
+            if((new_model_b[corte_a ].output.shape[1] < model_b.layers[i].input.shape[1]) and i == corte_b ):
+                print(i)
+                capa = model_b.layers[i]
+                print(model_b.layers[i].input)
+                print(model_b.layers[i].output)
+                new_model_b.add(capa)
+            
+    new_model_b.add(model_b.output)
+    new_model_b
 
-    # Añadir la capa de salida de model_a a new_model_a
-    output_layer_a = model_a.layers[-1]
-    new_model_a.add(output_layer_a)
-
-    # Añadir la capa de salida de model_b a new_model_b
-    output_layer_b = model_b.layers[-1]
-    new_model_b.add(output_layer_b)
-
+    new_model_a.summary() 
+    new_model_b.summary() 
     return new_model_a, new_model_b
 
+
+'''
+model.add
+'''
 
 def mutacion():
     new_model = Sequential()
@@ -232,12 +264,11 @@ def calcular_f1_score(y_verdaderas, y_predicciones):
                 conf_matrix[1][1] += 1
             else:
                 conf_matrix[1][0] += 1   
-    print(conf_matrix)
-    if(conf_matrix[0][0] != 0 and conf_matrix[0][1] != 0):
+    if(conf_matrix[0][0] != 0 or conf_matrix[0][1] != 0):
         precision = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[0][1])
     else:
         precision = 0
-    if(conf_matrix[0][0] != 0 and conf_matrix[1][0] != 0):
+    if(conf_matrix[0][0] != 0 or conf_matrix[1][0] != 0):
         exhaustion = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[1][0])
     else:
         exhaustion = 0
