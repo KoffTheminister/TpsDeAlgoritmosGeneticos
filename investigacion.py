@@ -21,6 +21,7 @@ num_epochs_original = 5
 funcs_act = ['relu', 'tanh', 'softmax']
 porcentaje_elitismo = 0.2
 cant_elitismo = porcentaje_elitismo*tam_generacion/100
+prob_crossover = 0.75
 prob_mutacion = 0.05
 
 
@@ -108,9 +109,9 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
             orden_f1_score.pop(k)
         k = 0
         lista_para_crossover = ruleta_segun_rango(orden_f1_score)
-        #while(k <= cant_de_crossovers):
-        #    model_a, model_b = crossover_mitad_mitad(orden_f1_score[lista_para_crossover[k]], orden_f1_score[lista_para_crossover[k + 1]])
-        #    k += 2
+        while(k <= cant_de_crossovers):
+            model_a, model_b = crossover_mitad_mitad(orden_f1_score[lista_para_crossover[k]], orden_f1_score[lista_para_crossover[k + 1]])
+            k += 2
         
 
         
