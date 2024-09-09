@@ -1,15 +1,11 @@
 #imports
-import random
 import pandas as pd
 import os, os.path
 import numpy as np
 import matplotlib.pyplot as plt 
 from PIL import Image
 import tensorflow
-import PIL.Image
-from pathlib import Path
 from sklearn.preprocessing import RobustScaler
-
 
 vgg16 = tensorflow.keras.applications.VGG16(
     include_top=True,
@@ -67,17 +63,6 @@ df_final = df_final.reset_index(drop=True)
 print(df_final)
 
 df_final.to_csv("dataframe_preparado.csv")
-
-
-'''
-item = df_final.iloc[3].to_frame().T
-df_final = pd.concat([df_final,item], ignore_index=True)
-df_final.drop(3,inplace=True)
-df_final.reset_index(inplace=True)
-del df_final["index"]
-print(df_final)
-'''
-
 
 
 

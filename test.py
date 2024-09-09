@@ -1,59 +1,67 @@
+#imports
+import pandas as pd
+import os, os.path
+import numpy as np
+import matplotlib.pyplot as plt 
+from PIL import Image
+import tensorflow
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+import PIL
+import PIL.Image
+from pathlib import Path
 import random
-import matplotlib
-import matplotlib.pyplot as plt
 
-#parametros
-tam_poblacion = 10
-genes = 30
+#variables
+cant_generaciones = 2
+tam_generacion = 20
+min_TLUs_en_hidden_layers_adicionales = 35
+max_TLUs_en_hidden_layers_adicionales = 70
+num_epochs_original = 5
+funcs_act = ['relu', 'tanh', 'softmax']
+porcentaje_elitismo = 0.2
+cant_elitismo = porcentaje_elitismo*tam_generacion/100
 prob_crossover = 0.75
 prob_mutacion = 0.05
-ciclos = 200  #20 o 100 o 200
-tam_torneo = 2
-porcentaje_elitismo = 20 #porciento
-cant_elite = porcentaje_elitismo*tam_poblacion/100
 
-#funciones soporte
-def crear_poblacion(numeroDeGenomas, numeroDeIndividuos):
-    cromosoma = list()
-    cromosomas = list()
-    for i in range(numeroDeIndividuos):
-        for j in range(numeroDeGenomas):
-            cromosoma.append(round(random.random()))
-        cromosomas.append(cromosoma)
-        cromosoma = list()
-    return cromosomas
+def crear_generacion_inicial(tamano_generacion, funciones_de_activacion):
+    generacion_inicial = []
+    for i in range(tamano_generacion):
+        model_i = Sequential()
+        index_de_func_act = random.randint(0, 2)
+        model_i.add(Dense(115, activation = funciones_de_activacion[index_de_func_act], input_shape = (1000,)))
+        for j in range(3):
+            model_i.add(Dense(70, activation = funciones_de_activacion[index_de_func_act]))
+        model_i.add(Dense(1, activation = 'tanh')) # la output layer es la misma para todos los cromosomas. la funcion de activacion para esta capa NO cambia.
+        model_i.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'], run_eagerly = True)
+        generacion_inicial.append(model_i)
+    return generacion_inicial
 
-def bin_to_dec(cromosoma):
-    length = len(cromosoma)
-    numDec = 0
-    for gen in cromosoma:
-        numDec += gen*(2**(length - 1))
-        length -= 1
-    return numDec
 
-def fun_obj(cromosoma):
-    return (bin_to_dec(cromosoma)/(2**30 - 1))**2
+def ruleta_segun_rango(lista_de_orden):  # no pasamos la generacion, si no mas bien pasamos la orden_f1_score
+    lista = []
+    totsum = 0
+    for l in range(int(len(lista_de_orden))):
+        totsum += l + 1
+    for l in range(int(len(lista_de_orden)*2)):
+            totRuleta = 0
+            flecha = random.random()*100
+            index = 0
+            condicion = True
+            while(condicion):
+                totRuleta += ((index + 1)/totsum)*100
+                if(totRuleta >= flecha):
+                    lista.append(index)
+                    condicion = False
+                else:
+                    index += 1
+    return lista
 
-def fitness(cromosoma, tot):
-    return fun_obj(cromosoma)/tot
+#gen_1 = crear_generacion_inicial(tam_generacion, funcs_act)
 
-def calcular_total(cromosomas):
-    tot = 0
-    for cromosoma in cromosomas:
-        tot += fun_obj(cromosoma)
-    return tot
+lista_de_co = ruleta_segun_rango([2,3,4,2,4,1,5,7,8,9])
+print(lista_de_co)
 
-def ordenar(cromosomas):
-    tot = calcular_total(cromosomas)
-    for i in range(tam_poblacion):
-        for j in range(i, tam_poblacion):
-            if(fitness(cromosomas[i], tot) > fitness(cromosomas[j],tot)):
-                aux = cromosomas[j]
-                cromosomas[j] = cromosomas[i]
-                cromosomas[i] = aux
-    return cromosomas
 
-poblacion = crear_poblacion(genes,tam_poblacion)
-ordenar(poblacion)
-print(fun_obj(poblacion[0]))
-print(fun_obj(poblacion[9]))
+
+
