@@ -8,11 +8,11 @@ import tensorflow
 from sklearn.preprocessing import RobustScaler
 
 vgg16 = tensorflow.keras.applications.VGG16(
-    include_top=True,
-    weights='imagenet',
-    input_tensor=None,
-    classes=1000,
-    classifier_activation='softmax'
+    include_top = True,
+    weights = 'imagenet',
+    input_tensor = None,
+    classes = 1000,
+    classifier_activation = 'softmax'
 )
 
 a_robust_scaler = RobustScaler()

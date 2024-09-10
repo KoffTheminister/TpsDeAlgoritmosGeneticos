@@ -8,23 +8,23 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 
 #variables
-cant_generaciones = 5 # 50
+cant_generaciones = 15 # 50
 tam_generacion = 20
 num_epochs_original = 5
 funcs_act = ['relu', 'leaky_relu', 'tanh', 'softmax']
 porcentaje_elitismo = 10
 cant_elitismo = porcentaje_elitismo*tam_generacion/100
-prob_crossover = 0.75
-prob_mutacion_l_r = 0.1
+prob_crossover = 0.5
+prob_mutacion_l_r = 0.2
 prob_mutacion_f_a = 0.05
 
 #funciones de AG
-def ruleta_segun_rango(lista_de_orden):  # no pasamos la generacion, si no mas bien pasamos la orden_f1_score
+def ruleta_segun_rango(lista_de_orden, cantidad_de_parejas):  # no pasamos la generacion, si no mas bien pasamos la orden_f1_score
     lista = []
     totsum = 0
     for l in range(int(len(lista_de_orden))):
         totsum += l + 1
-    for l in range(int(len(lista_de_orden)*2)):
+    for l in range(int(cantidad_de_parejas*2)):
             totRuleta = 0
             flecha = random.random()*100
             index = 0
@@ -61,9 +61,11 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
     valores_minimos = list()
     valores_maximos = list()
     ejex = list()
+    cant_parejas_en_crossover = (tam_generacion - cant_elitismo)
     for i in range(cantidad_generaciones):
         valores_maximos_auxiliar = []
         ejex.append(i)
+        print(len(generacion)) #esto
         for j in range(tamano_generacion):
             train_set, val_set, test_set = particionar_dataset(dataframe_preparado, len_df, int(round(len_df*70/100)), int(round(len_df*20/100)), 
                                                                int(round(len_df*10/100)))
@@ -72,7 +74,8 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
             test_set_y, test_set_x = dividir_features_y_clasificacion(test_set)
             generacion[j].fit(train_set_x, train_set_y, epochs = numero_de_epochs, batch_size = 32)  # batch_size es estatico
             generacion[j].evaluate(val_set_x, val_set_y)
-            predicted_ys = generacion[i].predict(test_set_x)
+            print(j) #esto
+            predicted_ys = generacion[i].predict(test_set_x) 
             len_predicted = round(len(predicted_ys)) 
             true_predictions = []
             for k in range(len_predicted):
@@ -89,42 +92,41 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
         valores_maximos.append(ordered_auxiliar[-1])
         valores_minimos.append(ordered_auxiliar[0])
         orden_f1_score = ordenar(orden_f1_score)
-        if(i < (cantidad_generaciones - 1)):
-            pointer = round(tam_generacion - 1)
-            k = 0
-            auxiliar_para_los_elites.clear()
-            while(k <= round(cantidad_elitismo - 1)):
-                auxiliar_para_los_elites.append(generacion[orden_f1_score[pointer][0]])
-                generacion.pop(orden_f1_score[pointer][0])
-                m = 0
-                for m in range(round(len(orden_f1_score))):
-                    if(orden_f1_score[pointer][0] < orden_f1_score[m][0]):
-                        orden_f1_score[m][0] -= 1
-                orden_f1_score.pop(pointer)
-                k += 1
-                pointer -= 1
-            lista_para_crossover = ruleta_segun_rango(orden_f1_score)
-            generacion_siguiente = []
-            k = 0
-            while(k <= (round(len(lista_para_crossover)) - 1)):
-                aw = lista_para_crossover[k]
-                bw = lista_para_crossover[k + 1]
-                a_loc = orden_f1_score[aw][0]
-                b_loc = orden_f1_score[bw][0]
-                a = crossover_promedio(generacion[a_loc], generacion[b_loc])
-                generacion_siguiente.append(a)
-                k += 2
-            k = 0
-            for k in range(round(len(generacion_siguiente))):
-               generacion_siguiente[k] = mutacion_learning_rate(generacion_siguiente[k])
-            k = 0
-            for k in range(round(len(generacion_siguiente))):
-               generacion_siguiente[k] = mutacion_func_act(generacion_siguiente[k])
-            k = 0
-            for k in range(round(cantidad_elitismo)):
-                generacion_siguiente.append(auxiliar_para_los_elites[k])
-            generacion = generacion_siguiente.copy()
-            k = 0
+        pointer = round(tam_generacion - 1)
+        k = 0
+        auxiliar_para_los_elites.clear()
+        while(k <= round(cantidad_elitismo - 1)):
+            auxiliar_para_los_elites.append(generacion[orden_f1_score[pointer][0]]) #esto va SIN copy()
+            #generacion.pop(orden_f1_score[pointer][0]) #esto
+            #m = 0
+            #for m in range(round(len(orden_f1_score))):
+            #    if(orden_f1_score[pointer][0] < orden_f1_score[m][0]):
+            #        orden_f1_score[m][0] -= 1 #esto
+            #orden_f1_score.pop(pointer) #esto
+            k += 1
+            pointer -= 1
+        lista_para_crossover = ruleta_segun_rango(orden_f1_score, cant_parejas_en_crossover)
+        generacion_siguiente = []
+        k = 0
+        while(k <= (round(len(lista_para_crossover)) - 1)):
+            aw = lista_para_crossover[k]
+            bw = lista_para_crossover[k + 1]
+            a_loc = orden_f1_score[aw][0]
+            b_loc = orden_f1_score[bw][0]
+            a = crossover_promedio(generacion[a_loc], generacion[b_loc])
+            generacion_siguiente.append(a)
+            k += 2
+        k = 0
+        for k in range(round(len(generacion_siguiente))):
+           generacion_siguiente[k] = mutacion_learning_rate(generacion_siguiente[k])
+        k = 0
+        for k in range(round(len(generacion_siguiente))):
+           generacion_siguiente[k] = mutacion_func_act(generacion_siguiente[k])
+        k = 0
+        for k in range(round(cantidad_elitismo)):
+            generacion_siguiente.append(auxiliar_para_los_elites[k])
+        generacion = generacion_siguiente.copy()
+        k = 0
     graficas_exactitud(valores_minimos, valores_maximos, ejex)
     generacion[orden_f1_score[tam_generacion - 1][0]].save("mejormodelo")
     
@@ -136,7 +138,7 @@ def crossover_promedio(model_a, model_b):
             new_model.add(Dense(**config))           
         for i, layer in enumerate(model_a.layers):
             weights1, biases1 = model_a.layers[i].get_weights()
-            weights2, biases2 = model_a.layers[i].get_weights()
+            weights2, biases2 = model_b.layers[i].get_weights()
             summed_weights = np.add(weights1, weights2)
             summed_biases = np.add(biases1, biases2)
             new_model.layers[i].set_weights([summed_weights, summed_biases])
@@ -147,7 +149,6 @@ def crossover_promedio(model_a, model_b):
                 func_act = model_b.layers[i].activation
         new_model.compile(optimizer='adam', loss='mse')
         return new_model
-    
     else:
         a_o_b = random.randint(0,1)
         if(a_o_b < 0.5):
@@ -275,9 +276,9 @@ def calcular_precision(y_verdaderas, y_predicciones):
 def graficas_exactitud(valores_minimos, valores_maximos, ejex):
     numeros = int(tam_generacion/10)
 
-    fig, axs = plt.subplots(1, 2, figsize=(12, 4))
+    fig, axs = plt.subplots(1, 2, figsize = (8, 4))
 
-    fig.suptitle('Estadísticas Finales de las Exactitudes', fontsize=16)
+    fig.suptitle('Estadísticas Finales de las Exactitudes', fontsize = 16)
     
     # Primer gráfico: Valores mínimos
     axs[0].plot(ejex, valores_minimos, 'b')
