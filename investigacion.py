@@ -1,14 +1,14 @@
 #imports
+import random
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt 
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
-import random
 
 #variables
-cant_generaciones = 2 # 50
+cant_generaciones = 5 # 50
 tam_generacion = 20
 num_epochs_original = 5
 funcs_act = ['relu', 'leaky_relu', 'tanh', 'softmax']
@@ -62,14 +62,16 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
     valores_maximos = list()
     ejex = list()
     for i in range(cantidad_generaciones):
+        valores_maximos_auxiliar = []
         ejex.append(i)
         for j in range(tamano_generacion):
             train_set, val_set, test_set = particionar_dataset(dataframe_preparado, len_df, int(round(len_df*70/100)), int(round(len_df*20/100)), 
                                                                int(round(len_df*10/100)))
             train_set_y, train_set_x = dividir_features_y_clasificacion(train_set)
-            #val_set_y, val_set_x = dividir_features_y_clasificacion(val_set)
+            val_set_y, val_set_x = dividir_features_y_clasificacion(val_set)
             test_set_y, test_set_x = dividir_features_y_clasificacion(test_set)
             generacion[j].fit(train_set_x, train_set_y, epochs = numero_de_epochs, batch_size = 32)  # batch_size es estatico
+            generacion[j].evaluate(val_set_x, val_set_y)
             predicted_ys = generacion[i].predict(test_set_x)
             len_predicted = round(len(predicted_ys)) 
             true_predictions = []
@@ -80,48 +82,52 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
                     true_predictions.append(1)
             resulted_f1_score = calcular_f1_score(test_set_y, true_predictions)
             orden_f1_score.append([j, resulted_f1_score])
+            resulted_precision = calcular_precision(test_set_y, true_predictions)
+            valores_maximos_auxiliar.append(resulted_precision)
 
+        ordered_auxiliar = sorted(valores_maximos_auxiliar)
+        valores_maximos.append(ordered_auxiliar[-1])
+        valores_minimos.append(ordered_auxiliar[0])
         orden_f1_score = ordenar(orden_f1_score)
-        valores_maximos.append(orden_f1_score[tam_generacion - 1][1])
-        valores_minimos.append(orden_f1_score[0][1])
-        pointer = tam_generacion - 1
-        k = 0 
-        auxiliar_para_los_elites.clear()
-        while(k <= round(cantidad_elitismo - 1)):
-            print(pointer)
-            auxiliar_para_los_elites.append(generacion[orden_f1_score[pointer][0]])
-            generacion.pop(orden_f1_score[pointer][0])
-            m = 0
-            for m in range(round(len(orden_f1_score))):
-                if(orden_f1_score[pointer][0] < orden_f1_score[m][0]):
-                    orden_f1_score[m][0] -= 1
-            orden_f1_score.pop(pointer)
-            k += 1
-            pointer -= 1
-        lista_para_crossover = ruleta_segun_rango(orden_f1_score)
-        generacion_siguiente = []
-        k = 0
-        while(k <= (round(len(lista_para_crossover)) - 1)):
-            aw = lista_para_crossover[k]
-            bw = lista_para_crossover[k + 1]
-            a_loc = orden_f1_score[aw][0]
-            b_loc = orden_f1_score[bw][0]
-            a = crossover_promedio(generacion[a_loc], generacion[b_loc])
-            generacion_siguiente.append(a)
-            k += 2
-        k = 0
-        for k in range(round(len(generacion_siguiente))):
-           generacion_siguiente[k] = mutacion_learning_rate(generacion_siguiente[k])
-        k = 0
-        for k in range(round(len(generacion_siguiente))):
-           generacion_siguiente[k] = mutacion_func_act(generacion_siguiente[k])
-        k = 0
-        for k in range(round(cantidad_elitismo)):
-            generacion_siguiente.append(auxiliar_para_los_elites[k])
-        generacion = generacion_siguiente.copy()
-        k = 0
+        if(i < (cantidad_generaciones - 1)):
+            pointer = round(tam_generacion - 1)
+            k = 0
+            auxiliar_para_los_elites.clear()
+            while(k <= round(cantidad_elitismo - 1)):
+                auxiliar_para_los_elites.append(generacion[orden_f1_score[pointer][0]])
+                generacion.pop(orden_f1_score[pointer][0])
+                m = 0
+                for m in range(round(len(orden_f1_score))):
+                    if(orden_f1_score[pointer][0] < orden_f1_score[m][0]):
+                        orden_f1_score[m][0] -= 1
+                orden_f1_score.pop(pointer)
+                k += 1
+                pointer -= 1
+            lista_para_crossover = ruleta_segun_rango(orden_f1_score)
+            generacion_siguiente = []
+            k = 0
+            while(k <= (round(len(lista_para_crossover)) - 1)):
+                aw = lista_para_crossover[k]
+                bw = lista_para_crossover[k + 1]
+                a_loc = orden_f1_score[aw][0]
+                b_loc = orden_f1_score[bw][0]
+                a = crossover_promedio(generacion[a_loc], generacion[b_loc])
+                generacion_siguiente.append(a)
+                k += 2
+            k = 0
+            for k in range(round(len(generacion_siguiente))):
+               generacion_siguiente[k] = mutacion_learning_rate(generacion_siguiente[k])
+            k = 0
+            for k in range(round(len(generacion_siguiente))):
+               generacion_siguiente[k] = mutacion_func_act(generacion_siguiente[k])
+            k = 0
+            for k in range(round(cantidad_elitismo)):
+                generacion_siguiente.append(auxiliar_para_los_elites[k])
+            generacion = generacion_siguiente.copy()
+            k = 0
+    graficas_exactitud(valores_minimos, valores_maximos, ejex)
+    generacion[orden_f1_score[tam_generacion - 1][0]].save("mejormodelo")
     
-
 def crossover_promedio(model_a, model_b):  
     if(random.random() <= prob_crossover and model_a != model_b): # si bien no estaria mal que sean iguales, se sabe que new_model sera igual a las otras dos asi que omitimos todo el calculo
         new_model = Sequential()
@@ -217,7 +223,6 @@ def particionar_dataset(original_dataset, longitud_dataset, longitud_train, long
             dataset.reset_index(inplace=True)
             del dataset["index"]
             longitud_dataset = longitud_dataset - 1
-
     return df_train, df_val, df_test
 
 def calcular_f1_score(y_verdaderas, y_predicciones):
@@ -244,9 +249,72 @@ def calcular_f1_score(y_verdaderas, y_predicciones):
     if(precision != 0 and exhaustion != 0):
         f1_score = (2*precision*exhaustion)/(precision + exhaustion)
     else:
-        f1_score = 0
-    
+        f1_score = 0 
     return f1_score
+
+def calcular_precision(y_verdaderas, y_predicciones):
+    conf_matrix = [[0, 0], [0, 0]]
+    for i1 in range(int(len(y_verdaderas))):
+        if(y_verdaderas.iloc[i1].loc['Y'] == 1):
+            if(y_verdaderas.iloc[i1].loc['Y'] == y_predicciones[i1]):
+                conf_matrix[0][0] += 1
+            else:
+                conf_matrix[0][1] += 1
+        else:
+            if(y_verdaderas.iloc[i1].loc['Y'] == y_predicciones[i1]):
+                conf_matrix[1][1] += 1
+            else:
+                conf_matrix[1][0] += 1   
+    if(conf_matrix[0][0] != 0 or conf_matrix[0][1] != 0):
+        precision = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[0][1])
+    else:
+        precision = 0
+    return precision
+
+
+def graficas_exactitud(valores_minimos, valores_maximos, ejex):
+    numeros = int(tam_generacion/10)
+
+    fig, axs = plt.subplots(1, 2, figsize=(12, 4))
+
+    fig.suptitle('Estadísticas Finales de las Exactitudes', fontsize=16)
+    
+    # Primer gráfico: Valores mínimos
+    axs[0].plot(ejex, valores_minimos, 'b')
+    axs[0].set_title('Exactitud Mínima')
+    axs[0].set_xlabel('Corrida')
+    axs[0].set_ylabel('Exactitud')
+    axs[0].set_xlim(0, tam_generacion - 1)
+    axs[0].set_ylim(0, 1)
+    axs[0].set_xticks(range(0, tam_generacion + 1, numeros))
+    axs[0].set_yticks([i / 10 for i in range(0, 12)])
+    axs[0].legend(loc='best')
+
+    # Segundo gráfico: Valores máximos
+    axs[1].plot(ejex, valores_maximos, 'r')
+    axs[1].set_title('Exactitud Máxima')
+    axs[1].set_xlabel('Corrida')
+    axs[1].set_ylabel('Exactitud')
+    axs[1].set_xlim(0, tam_generacion - 1)
+    axs[1].set_ylim(0, 1)
+    axs[1].set_xticks(range(0, tam_generacion + 1, numeros))
+    axs[1].set_yticks([i / 10 for i in range(0, 12)])
+    axs[1].legend(loc='best')
+
+    # # Tercer gráfico: Valores promedio
+    # axs[2].plot(ejex, valores_promedios, 'g')
+    # axs[2].set_title('Exactitud Promedio')
+    # axs[2].set_xlabel('Corrida')
+    # axs[2].set_ylabel('Exactitud')
+    # axs[2].set_xlim(0, tam_generacion - 1)
+    # axs[2].set_ylim(0, 1)
+    # axs[2].set_xticks(range(0, tam_generacion + 1, numeros))
+    # axs[2].set_yticks([i / 10 for i in range(0, 12)])
+    # axs[2].legend(loc='best')
+
+    plt.tight_layout()
+    plt.show()
+
 
 
 crear_universo(cant_generaciones, tam_generacion, funcs_act, num_epochs_original, cant_elitismo)
