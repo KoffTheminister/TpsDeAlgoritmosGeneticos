@@ -8,13 +8,13 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 
 #variables
-cant_generaciones = 15 # 50
+cant_generaciones = 30 # 50
 tam_generacion = 20
 num_epochs_original = 5
 funcs_act = ['relu', 'leaky_relu', 'tanh', 'softmax']
 porcentaje_elitismo = 10
 cant_elitismo = porcentaje_elitismo*tam_generacion/100
-prob_crossover = 0.5
+prob_crossover = 0.75
 prob_mutacion_l_r = 0.2
 prob_mutacion_f_a = 0.05
 
@@ -51,7 +51,7 @@ def crear_generacion_inicial(tamano_generacion, funciones_de_activacion):
         generacion_inicial.append(model_i)
     return generacion_inicial
 
-def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activacion, numero_de_epochs, cantidad_elitismo):
+def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activacion, numero_de_epochs, cantidad_elitismo, prob_mut_l_r, prob_mut_f_a, nombre_plot):
     dataframe_preparado = pd.read_csv("dataframe_preparado.csv")
     del dataframe_preparado['Unnamed: 0']
     generacion = crear_generacion_inicial(tamano_generacion, funciones_de_activacion)
@@ -65,17 +65,15 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
     for i in range(cantidad_generaciones):
         valores_maximos_auxiliar = []
         ejex.append(i)
-        print(len(generacion)) #esto
         for j in range(tamano_generacion):
-            train_set, val_set, test_set = particionar_dataset(dataframe_preparado, len_df, int(round(len_df*70/100)), int(round(len_df*20/100)), 
+            train_set, val_set, test_set = particionar_dataset(dataframe_preparado, len_df, int(round(len_df*65/100)), int(round(len_df*25/100)), 
                                                                int(round(len_df*10/100)))
             train_set_y, train_set_x = dividir_features_y_clasificacion(train_set)
             val_set_y, val_set_x = dividir_features_y_clasificacion(val_set)
             test_set_y, test_set_x = dividir_features_y_clasificacion(test_set)
             generacion[j].fit(train_set_x, train_set_y, epochs = numero_de_epochs, batch_size = 32)  # batch_size es estatico
             generacion[j].evaluate(val_set_x, val_set_y)
-            print(j) #esto
-            predicted_ys = generacion[i].predict(test_set_x) 
+            predicted_ys = generacion[j].predict(test_set_x) 
             len_predicted = round(len(predicted_ys)) 
             true_predictions = []
             for k in range(len_predicted):
@@ -88,14 +86,16 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
             resulted_precision = calcular_precision(test_set_y, true_predictions)
             valores_maximos_auxiliar.append(resulted_precision)
 
+
         ordered_auxiliar = sorted(valores_maximos_auxiliar)
         valores_maximos.append(ordered_auxiliar[-1])
         valores_minimos.append(ordered_auxiliar[0])
         orden_f1_score = ordenar(orden_f1_score)
-        pointer = round(tam_generacion - 1)
+        pointer = round(tamano_generacion - 1)
         k = 0
         auxiliar_para_los_elites.clear()
         while(k <= round(cantidad_elitismo - 1)):
+            print(pointer)
             auxiliar_para_los_elites.append(generacion[orden_f1_score[pointer][0]]) #esto va SIN copy()
             #generacion.pop(orden_f1_score[pointer][0]) #esto
             #m = 0
@@ -118,18 +118,20 @@ def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activa
             k += 2
         k = 0
         for k in range(round(len(generacion_siguiente))):
-           generacion_siguiente[k] = mutacion_learning_rate(generacion_siguiente[k])
+           generacion_siguiente[k] = mutacion_learning_rate(generacion_siguiente[k], prob_mut_l_r)
         k = 0
         for k in range(round(len(generacion_siguiente))):
-           generacion_siguiente[k] = mutacion_func_act(generacion_siguiente[k])
+           generacion_siguiente[k] = mutacion_func_act(generacion_siguiente[k], prob_mut_f_a)
         k = 0
         for k in range(round(cantidad_elitismo)):
             generacion_siguiente.append(auxiliar_para_los_elites[k])
         generacion = generacion_siguiente.copy()
         k = 0
-    graficas_exactitud(valores_minimos, valores_maximos, ejex)
+    graficas_exactitud(valores_minimos, valores_maximos, ejex, nombre_plot)
     generacion[orden_f1_score[tam_generacion - 1][0]].save("mejormodelo")
     
+
+
 def crossover_promedio(model_a, model_b):  
     if(random.random() <= prob_crossover and model_a != model_b): # si bien no estaria mal que sean iguales, se sabe que new_model sera igual a las otras dos asi que omitimos todo el calculo
         new_model = Sequential()
@@ -155,18 +157,50 @@ def crossover_promedio(model_a, model_b):
             return model_a
         else:
             return model_b
+        
+def calcular_f1_score(y_verdaderas, y_predicciones):
+    conf_matrix = [[0, 0], [0, 0]]
+    for i1 in range(int(len(y_verdaderas))):
+        if(y_verdaderas.iloc[i1].loc['Y'] == 1):
+            if(y_verdaderas.iloc[i1].loc['Y'] == y_predicciones[i1]):
+                conf_matrix[0][0] += 1
+            else:
+                conf_matrix[0][1] += 1
+        else:
+            if(y_verdaderas.iloc[i1].loc['Y'] == y_predicciones[i1]):
+                conf_matrix[1][1] += 1
+            else:
+                conf_matrix[1][0] += 1   
+    if(conf_matrix[0][0] != 0 or conf_matrix[0][1] != 0):
+        precision = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[0][1])
+    else:
+        precision = 0
+    if(conf_matrix[0][0] != 0 or conf_matrix[1][0] != 0):
+        exhaustion = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[1][0])
+    else:
+        exhaustion = 0
+    if(precision != 0 and exhaustion != 0):
+        f1_score = (2*precision*exhaustion)/(precision + exhaustion)
+    else:
+        f1_score = 0 
+    return f1_score
 
-def mutacion_learning_rate(un_modelo):
-    if (prob_mutacion_l_r >= random.random()):
+def dividir_features_y_clasificacion(df):
+    set_y = df[['Y']].copy()
+    set_x = df.drop(['Y'], axis = 1)  
+    return set_y, set_x
+
+def mutacion_learning_rate(un_modelo, prob_mut_l_r):
+    if (prob_mut_l_r >= random.random()):
         new_learning_rate = np.random.uniform(0.0001, 0.01)
         un_modelo.compile(optimizer = Adam(learning_rate = new_learning_rate), loss='mse') 
         return un_modelo
     else:
         return un_modelo
     
-def mutacion_func_act(un_modelo):
+def mutacion_func_act(un_modelo, prob_mut_f_a):
     for layer in range(4):
-        if (prob_mutacion_f_a >= random.random()):
+        if (prob_mut_f_a >= random.random()):
             nueva_activacion = np.random.choice(funcs_act)
             layer_configuracion = un_modelo.layers[layer].get_config()
             layer_configuracion['activation'] = nueva_activacion
@@ -180,12 +214,6 @@ def ordenar(el_array):
             if(el_array[i1][1] > el_array[j1][1]):
                 el_array[j1], el_array[i1] = el_array[i1], el_array[j1]
     return el_array
-
-#funciones de la NN
-def dividir_features_y_clasificacion(df):
-    set_y = df[['Y']].copy()
-    set_x = df.drop(['Y'], axis = 1)  
-    return set_y, set_x
 
 def particionar_dataset(original_dataset, longitud_dataset, longitud_train, longitud_val, longitud_test):
     dataset = original_dataset.copy()
@@ -226,35 +254,8 @@ def particionar_dataset(original_dataset, longitud_dataset, longitud_train, long
             longitud_dataset = longitud_dataset - 1
     return df_train, df_val, df_test
 
-def calcular_f1_score(y_verdaderas, y_predicciones):
-    conf_matrix = [[0, 0], [0, 0]]
-    for i1 in range(int(len(y_verdaderas))):
-        if(y_verdaderas.iloc[i1].loc['Y'] == 1):
-            if(y_verdaderas.iloc[i1].loc['Y'] == y_predicciones[i1]):
-                conf_matrix[0][0] += 1
-            else:
-                conf_matrix[0][1] += 1
-        else:
-            if(y_verdaderas.iloc[i1].loc['Y'] == y_predicciones[i1]):
-                conf_matrix[1][1] += 1
-            else:
-                conf_matrix[1][0] += 1   
-    if(conf_matrix[0][0] != 0 or conf_matrix[0][1] != 0):
-        precision = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[0][1])
-    else:
-        precision = 0
-    if(conf_matrix[0][0] != 0 or conf_matrix[1][0] != 0):
-        exhaustion = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[1][0])
-    else:
-        exhaustion = 0
-    if(precision != 0 and exhaustion != 0):
-        f1_score = (2*precision*exhaustion)/(precision + exhaustion)
-    else:
-        f1_score = 0 
-    return f1_score
-
-def calcular_precision(y_verdaderas, y_predicciones):
-    conf_matrix = [[0, 0], [0, 0]]
+def calcular_precision(y_verdaderas, y_predicciones):  #recibimos las clasficicaiones verdaderas y las predicciones hechas
+    conf_matrix = [[0, 0], [0, 0]]  
     for i1 in range(int(len(y_verdaderas))):
         if(y_verdaderas.iloc[i1].loc['Y'] == 1):
             if(y_verdaderas.iloc[i1].loc['Y'] == y_predicciones[i1]):
@@ -273,7 +274,7 @@ def calcular_precision(y_verdaderas, y_predicciones):
     return precision
 
 
-def graficas_exactitud(valores_minimos, valores_maximos, ejex):
+def graficas_exactitud(valores_minimos, valores_maximos, ejex, nombre):
     numeros = int(tam_generacion/10)
 
     fig, axs = plt.subplots(1, 2, figsize = (8, 4))
@@ -302,20 +303,19 @@ def graficas_exactitud(valores_minimos, valores_maximos, ejex):
     axs[1].set_yticks([i / 10 for i in range(0, 12)])
     axs[1].legend(loc='best')
 
-    # # Tercer gráfico: Valores promedio
-    # axs[2].plot(ejex, valores_promedios, 'g')
-    # axs[2].set_title('Exactitud Promedio')
-    # axs[2].set_xlabel('Corrida')
-    # axs[2].set_ylabel('Exactitud')
-    # axs[2].set_xlim(0, tam_generacion - 1)
-    # axs[2].set_ylim(0, 1)
-    # axs[2].set_xticks(range(0, tam_generacion + 1, numeros))
-    # axs[2].set_yticks([i / 10 for i in range(0, 12)])
-    # axs[2].legend(loc='best')
-
     plt.tight_layout()
-    plt.show()
+    plt.savefig(nombre)
+    #plt.show()
 
 
 
-crear_universo(cant_generaciones, tam_generacion, funcs_act, num_epochs_original, cant_elitismo)
+#crear_universo(cant_generaciones, tam_generacion, funcs_act, num_epochs_original, cant_elitismo, prob_mutacion_l_r, prob_mutacion_f_a, '20_c-30_g-alto_crossover.png')
+crear_universo(cant_generaciones, 10, funcs_act, num_epochs_original, 1, prob_mutacion_l_r, prob_mutacion_f_a, '10_c-30_g-alto_crossover.png')
+crear_universo(20, 10, funcs_act, num_epochs_original, 1, prob_mutacion_l_r, prob_mutacion_f_a, '10_c-20_g-alto_crossover.png')
+crear_universo(15, 10, funcs_act, num_epochs_original, 1, prob_mutacion_l_r, prob_mutacion_f_a, '10_c-15_g-alto_crossover.png')
+crear_universo(15, 10, funcs_act, 3, 1, 0.3, prob_mutacion_f_a, '10_c-15_g-3_epochs-alto_crossover.png')
+crear_universo(15, 10, funcs_act, 3, 1, 0.3, 0.02, '10_c-15_g-3_epochs-alto_crossover-alto_l_r.png')
+
+
+
+
