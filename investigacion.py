@@ -1,168 +1,321 @@
-import cv2
+#imports
+import random
 import pandas as pd
-import os, os.path
 import numpy as np
 import matplotlib.pyplot as plt 
-from PIL import Image
-import tensorflow
-import PIL
-import PIL.Image
-from pathlib import Path
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.optimizers import Adam
+
+#variables
+cant_generaciones = 30 # 50
+tam_generacion = 20
+num_epochs_original = 5
+funcs_act = ['relu', 'leaky_relu', 'tanh', 'softmax']
+porcentaje_elitismo = 10
+cant_elitismo = porcentaje_elitismo*tam_generacion/100
+prob_crossover = 0.75
+prob_mutacion_l_r = 0.2
+prob_mutacion_f_a = 0.05
+
+#funciones de AG
+def ruleta_segun_rango(lista_de_orden, cantidad_de_parejas):  # no pasamos la generacion, si no mas bien pasamos la orden_f1_score
+    lista = []
+    totsum = 0
+    for l in range(int(len(lista_de_orden))):
+        totsum += l + 1
+    for l in range(int(cantidad_de_parejas*2)):
+            totRuleta = 0
+            flecha = random.random()*100
+            index = 0
+            condicion = True
+            while(condicion):
+                totRuleta += ((index + 1)/totsum)*100
+                if(totRuleta >= flecha):
+                    lista.append(index)
+                    condicion = False
+                else:
+                    index += 1
+    return lista
+
+def crear_generacion_inicial(tamano_generacion, funciones_de_activacion):
+    generacion_inicial = []
+    for i in range(tamano_generacion):
+        model_i = Sequential()
+        index_de_func_act = random.randint(0, 2)
+        model_i.add(Dense(115, activation = funciones_de_activacion[index_de_func_act], input_shape = (1000,)))
+        for j in range(3):
+            model_i.add(Dense(70, activation = funciones_de_activacion[index_de_func_act]))
+        model_i.add(Dense(1, activation = 'tanh')) # la output layer es la misma para todos los cromosomas. la funcion de activacion para esta capa NO cambia.
+        model_i.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'], run_eagerly = True)
+        generacion_inicial.append(model_i)
+    return generacion_inicial
+
+def crear_universo(cantidad_generaciones, tamano_generacion, funciones_de_activacion, numero_de_epochs, cantidad_elitismo, prob_mut_l_r, prob_mut_f_a, nombre_plot):
+    dataframe_preparado = pd.read_csv("dataframe_preparado.csv")
+    del dataframe_preparado['Unnamed: 0']
+    generacion = crear_generacion_inicial(tamano_generacion, funciones_de_activacion)
+    len_df = int(len(dataframe_preparado.index))
+    orden_f1_score = []
+    auxiliar_para_los_elites = []
+    valores_minimos = list()
+    valores_maximos = list()
+    ejex = list()
+    cant_parejas_en_crossover = (tam_generacion - cant_elitismo)
+    for i in range(cantidad_generaciones):
+        valores_maximos_auxiliar = []
+        ejex.append(i)
+        for j in range(tamano_generacion):
+            train_set, val_set, test_set = particionar_dataset(dataframe_preparado, len_df, int(round(len_df*65/100)), int(round(len_df*25/100)), 
+                                                               int(round(len_df*10/100)))
+            train_set_y, train_set_x = dividir_features_y_clasificacion(train_set)
+            val_set_y, val_set_x = dividir_features_y_clasificacion(val_set)
+            test_set_y, test_set_x = dividir_features_y_clasificacion(test_set)
+            generacion[j].fit(train_set_x, train_set_y, epochs = numero_de_epochs, batch_size = 32)  # batch_size es estatico
+            generacion[j].evaluate(val_set_x, val_set_y)
+            predicted_ys = generacion[j].predict(test_set_x) 
+            len_predicted = round(len(predicted_ys)) 
+            true_predictions = []
+            for k in range(len_predicted):
+                if(predicted_ys[k] < 0):
+                    true_predictions.append(0)
+                else:
+                    true_predictions.append(1)
+            resulted_f1_score = calcular_f1_score(test_set_y, true_predictions)
+            orden_f1_score.append([j, resulted_f1_score])
+            resulted_precision = calcular_precision(test_set_y, true_predictions)
+            valores_maximos_auxiliar.append(resulted_precision)
+
+
+        ordered_auxiliar = sorted(valores_maximos_auxiliar)
+        valores_maximos.append(ordered_auxiliar[-1])
+        valores_minimos.append(ordered_auxiliar[0])
+        orden_f1_score = ordenar(orden_f1_score)
+        pointer = round(tamano_generacion - 1)
+        k = 0
+        auxiliar_para_los_elites.clear()
+        while(k <= round(cantidad_elitismo - 1)):
+            print(pointer)
+            auxiliar_para_los_elites.append(generacion[orden_f1_score[pointer][0]]) #esto va SIN copy()
+            #generacion.pop(orden_f1_score[pointer][0]) #esto
+            #m = 0
+            #for m in range(round(len(orden_f1_score))):
+            #    if(orden_f1_score[pointer][0] < orden_f1_score[m][0]):
+            #        orden_f1_score[m][0] -= 1 #esto
+            #orden_f1_score.pop(pointer) #esto
+            k += 1
+            pointer -= 1
+        lista_para_crossover = ruleta_segun_rango(orden_f1_score, cant_parejas_en_crossover)
+        generacion_siguiente = []
+        k = 0
+        while(k <= (round(len(lista_para_crossover)) - 1)):
+            aw = lista_para_crossover[k]
+            bw = lista_para_crossover[k + 1]
+            a_loc = orden_f1_score[aw][0]
+            b_loc = orden_f1_score[bw][0]
+            a = crossover_promedio(generacion[a_loc], generacion[b_loc])
+            generacion_siguiente.append(a)
+            k += 2
+        k = 0
+        for k in range(round(len(generacion_siguiente))):
+           generacion_siguiente[k] = mutacion_learning_rate(generacion_siguiente[k], prob_mut_l_r)
+        k = 0
+        for k in range(round(len(generacion_siguiente))):
+           generacion_siguiente[k] = mutacion_func_act(generacion_siguiente[k], prob_mut_f_a)
+        k = 0
+        for k in range(round(cantidad_elitismo)):
+            generacion_siguiente.append(auxiliar_para_los_elites[k])
+        generacion = generacion_siguiente.copy()
+        k = 0
+    graficas_exactitud(valores_minimos, valores_maximos, ejex, nombre_plot)
+    generacion[orden_f1_score[tam_generacion - 1][0]].save("mejormodelo")
+    
+
+
+def crossover_promedio(model_a, model_b):  
+    if(random.random() <= prob_crossover and model_a != model_b): # si bien no estaria mal que sean iguales, se sabe que new_model sera igual a las otras dos asi que omitimos todo el calculo
+        new_model = Sequential()
+        for layer in model_a.layers:
+            config = layer.get_config()
+            new_model.add(Dense(**config))           
+        for i, layer in enumerate(model_a.layers):
+            weights1, biases1 = model_a.layers[i].get_weights()
+            weights2, biases2 = model_b.layers[i].get_weights()
+            summed_weights = np.add(weights1, weights2)
+            summed_biases = np.add(biases1, biases2)
+            new_model.layers[i].set_weights([summed_weights, summed_biases])
+            a_o_b = random.randint(0,1)
+            if (a_o_b < 0.5):
+                func_act = model_a.layers[i].activation
+            else:
+                func_act = model_b.layers[i].activation
+        new_model.compile(optimizer='adam', loss='mse')
+        return new_model
+    else:
+        a_o_b = random.randint(0,1)
+        if(a_o_b < 0.5):
+            return model_a
+        else:
+            return model_b
+        
+def calcular_f1_score(y_verdaderas, y_predicciones):
+    conf_matrix = [[0, 0], [0, 0]]
+    for i1 in range(int(len(y_verdaderas))):
+        if(y_verdaderas.iloc[i1].loc['Y'] == 1):
+            if(y_verdaderas.iloc[i1].loc['Y'] == y_predicciones[i1]):
+                conf_matrix[0][0] += 1
+            else:
+                conf_matrix[0][1] += 1
+        else:
+            if(y_verdaderas.iloc[i1].loc['Y'] == y_predicciones[i1]):
+                conf_matrix[1][1] += 1
+            else:
+                conf_matrix[1][0] += 1   
+    if(conf_matrix[0][0] != 0 or conf_matrix[0][1] != 0):
+        precision = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[0][1])
+    else:
+        precision = 0
+    if(conf_matrix[0][0] != 0 or conf_matrix[1][0] != 0):
+        exhaustion = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[1][0])
+    else:
+        exhaustion = 0
+    if(precision != 0 and exhaustion != 0):
+        f1_score = (2*precision*exhaustion)/(precision + exhaustion)
+    else:
+        f1_score = 0 
+    return f1_score
+
+def dividir_features_y_clasificacion(df):
+    set_y = df[['Y']].copy()
+    set_x = df.drop(['Y'], axis = 1)  
+    return set_y, set_x
+
+def mutacion_learning_rate(un_modelo, prob_mut_l_r):
+    if (prob_mut_l_r >= random.random()):
+        new_learning_rate = np.random.uniform(0.0001, 0.01)
+        un_modelo.compile(optimizer = Adam(learning_rate = new_learning_rate), loss='mse') 
+        return un_modelo
+    else:
+        return un_modelo
+    
+def mutacion_func_act(un_modelo, prob_mut_f_a):
+    for layer in range(4):
+        if (prob_mut_f_a >= random.random()):
+            nueva_activacion = np.random.choice(funcs_act)
+            layer_configuracion = un_modelo.layers[layer].get_config()
+            layer_configuracion['activation'] = nueva_activacion
+            un_modelo.layers[layer] = Dense.from_config(layer_configuracion)
+    return un_modelo
+    
+def ordenar(el_array):
+    len_array = len(el_array)
+    for i1 in range(len_array):
+        for j1 in range(i1, len_array):
+            if(el_array[i1][1] > el_array[j1][1]):
+                el_array[j1], el_array[i1] = el_array[i1], el_array[j1]
+    return el_array
+
+def particionar_dataset(original_dataset, longitud_dataset, longitud_train, longitud_val, longitud_test):
+    dataset = original_dataset.copy()
+    df_train = pd.DataFrame(columns = dataset.columns)
+    df_val = pd.DataFrame(columns = dataset.columns)
+    df_test = pd.DataFrame(columns = dataset.columns)
+    for i1 in range(longitud_train):
+        j = random.randint(0, longitud_dataset - 1)
+        item = dataset.iloc[j].to_frame().T
+        df_train = pd.concat([df_train, item], ignore_index=True)
+        dataset.drop(j, inplace=True)
+        dataset.reset_index(inplace=True)
+        del dataset["index"]
+        longitud_dataset = longitud_dataset - 1
+    for i1 in range(longitud_val):
+        j = random.randint(0, longitud_dataset - 1)
+        item = dataset.iloc[j].to_frame().T
+        df_val = pd.concat([df_val, item], ignore_index=True)
+        dataset.drop(j, inplace=True)
+        dataset.reset_index(inplace=True)
+        del dataset["index"]
+        longitud_dataset = longitud_dataset - 1
+    for i1 in range(longitud_test):
+        if (longitud_dataset > 1):
+            j = random.randint(0, longitud_dataset - 1)
+            item = dataset.iloc[j].to_frame().T
+            df_test = pd.concat([df_test, item], ignore_index=True)
+            dataset.drop(j, inplace=True)
+            dataset.reset_index(inplace=True)
+            del dataset["index"]
+            longitud_dataset = longitud_dataset - 1
+        elif (longitud_dataset == 1):
+            item = dataset.iloc[0].to_frame().T
+            df_test = pd.concat([df_test, item], ignore_index=True)
+            dataset.drop(0, inplace=True)
+            dataset.reset_index(inplace=True)
+            del dataset["index"]
+            longitud_dataset = longitud_dataset - 1
+    return df_train, df_val, df_test
+
+def calcular_precision(y_verdaderas, y_predicciones):  #recibimos las clasficicaiones verdaderas y las predicciones hechas
+    conf_matrix = [[0, 0], [0, 0]]  
+    for i1 in range(int(len(y_verdaderas))):
+        if(y_verdaderas.iloc[i1].loc['Y'] == 1):
+            if(y_verdaderas.iloc[i1].loc['Y'] == y_predicciones[i1]):
+                conf_matrix[0][0] += 1
+            else:
+                conf_matrix[0][1] += 1
+        else:
+            if(y_verdaderas.iloc[i1].loc['Y'] == y_predicciones[i1]):
+                conf_matrix[1][1] += 1
+            else:
+                conf_matrix[1][0] += 1   
+    if(conf_matrix[0][0] != 0 or conf_matrix[0][1] != 0):
+        precision = (conf_matrix[0][0])/(conf_matrix[0][0] + conf_matrix[0][1])
+    else:
+        precision = 0
+    return precision
+
+
+def graficas_exactitud(valores_minimos, valores_maximos, ejex, nombre):
+    numeros = int(tam_generacion/10)
+
+    fig, axs = plt.subplots(1, 2, figsize = (8, 4))
+
+    fig.suptitle('Estadísticas Finales de las Exactitudes', fontsize = 16)
+    
+    # Primer gráfico: Valores mínimos
+    axs[0].plot(ejex, valores_minimos, 'b')
+    axs[0].set_title('Exactitud Mínima')
+    axs[0].set_xlabel('Corrida')
+    axs[0].set_ylabel('Exactitud')
+    axs[0].set_xlim(0, tam_generacion - 1)
+    axs[0].set_ylim(0, 1)
+    axs[0].set_xticks(range(0, tam_generacion + 1, numeros))
+    axs[0].set_yticks([i / 10 for i in range(0, 12)])
+    axs[0].legend(loc='best')
+
+    # Segundo gráfico: Valores máximos
+    axs[1].plot(ejex, valores_maximos, 'r')
+    axs[1].set_title('Exactitud Máxima')
+    axs[1].set_xlabel('Corrida')
+    axs[1].set_ylabel('Exactitud')
+    axs[1].set_xlim(0, tam_generacion - 1)
+    axs[1].set_ylim(0, 1)
+    axs[1].set_xticks(range(0, tam_generacion + 1, numeros))
+    axs[1].set_yticks([i / 10 for i in range(0, 12)])
+    axs[1].legend(loc='best')
+
+    plt.tight_layout()
+    plt.savefig(nombre)
+    #plt.show()
 
 
 
-vgg16 = tensorflow.keras.applications.VGG16(
-    include_top=True,
-    weights='imagenet',
-    input_tensor=None,
-    classes=1000,
-    classifier_activation='softmax'
-)
-
-#model = vgg16(weights = 'imagenet', include_top = False, pooling = 'avg')
-
-
-def extraer_features(imagen):
-
-    # Cargar la imagen y redimensionarla
-    img = Image.open(imagen)
-    img = img.convert('RGB')  # Asegurarse de que la imagen esté en RGB
-    img = img.resize((224, 224))  # Redimensionar para VGG16
-    img_array = np.array(img)
-
-    # Preprocesar la imagen
-    img_array = tensorflow.keras.applications.vgg16.preprocess_input(img_array)
-    img_array = np.expand_dims(img_array, axis=0)  # Añadir dimensión batch
-
-    # Extraer características
-    features = vgg16.predict(img_array)
-    return features.flatten()
-
-    '''  
-    im_transformada = np.asarray(Image.open(imagen))
-    im_transformada = cv2.cvtColor(im_transformada, cv2.COLOR_RGB2BGR)
-    features = vgg16.predict(im_transformada)
-    return features
-    '''
-
-
-
-dir_path = 'data/0'  # poner directorio donde estan las imagenes
-features = []
-for filesito in os.scandir(dir_path):
-    aux = extraer_features(filesito)
-    features.append(aux)
-
-canmuestras = len(features)
-df1 = pd.DataFrame(features)
-classificatione = np.ones(canmuestras)
-df1['Y'] = classificatione
-
-dir_path = 'data/1'  # poner directorio donde estan las imagenes
-features = []
-for filesito in os.scandir(dir_path):
-    aux = extraer_features(filesito)
-    features.append(aux)
-
-
-canmuestras = len(features)
-df2 = pd.DataFrame(features)
-classificatione = np.zeros(canmuestras)
-df2['Y'] = classificatione
-#print(df1.head)
-
-df_final = pd.concat([df1, df2])
-df_final = df_final.reset_index(inplace=True)
-
-df_final.to_csv("df_final.csv")
-
-
-'''1
-dir_path2 = 'data/1'
-for filesito2 in os.scandir(dir_path2):
-    features.append(extraer_features(filesito2))
-
-for i, feature in enumerate(features):
-    print(f"Feature {i} shape: {feature.shape}")
-'''
-
-
-
-'''
-
-print(tensorflow.__version__)
-#my_df = pd.DataFrame(features, columns = )
+#crear_universo(cant_generaciones, tam_generacion, funcs_act, num_epochs_original, cant_elitismo, prob_mutacion_l_r, prob_mutacion_f_a, '20_c-30_g-alto_crossover.png')
+crear_universo(cant_generaciones, 10, funcs_act, num_epochs_original, 1, prob_mutacion_l_r, prob_mutacion_f_a, '10_c-30_g-alto_crossover.png')
+crear_universo(20, 10, funcs_act, num_epochs_original, 1, prob_mutacion_l_r, prob_mutacion_f_a, '10_c-20_g-alto_crossover.png')
+crear_universo(15, 10, funcs_act, num_epochs_original, 1, prob_mutacion_l_r, prob_mutacion_f_a, '10_c-15_g-alto_crossover.png')
+crear_universo(15, 10, funcs_act, 3, 1, 0.3, prob_mutacion_f_a, '10_c-15_g-3_epochs-alto_crossover.png')
+crear_universo(15, 10, funcs_act, 3, 1, 0.3, 0.02, '10_c-15_g-3_epochs-alto_crossover-alto_l_r.png')
 
 
 
 
-#for c in list(Path('data/0').iterdir()):
-#    if c.suffix != 'jpeg':
-#        nuevo= c.with_suffix(".JPEG")
-#        c.rename(nuevo)
-
-#for c in list(Path('data/1').iterdir()):
-#    if c.suffix != 'jpeg':
-#        nuevo= c.with_suffix(".JPEG")
-#        c.rename(nuevo)
-
-
-
-batch_size = 32
-img_height = 180
-img_width = 180
-
-
-
-model = keras.Sequential(
-    [
-        layers.Rescaling(1./255, input_shape=(img_height, img_width, 3)),
-        layers.Conv2D(16, 3, padding='same', activation='relu'),
-        layers.MaxPooling2D(),
-        layers.Conv2D(32, 3, padding='same', activation='relu'),
-        layers.MaxPooling2D(),
-        layers.Conv2D(64, 3, padding='same', activation='relu'),
-        layers.MaxPooling2D(),
-        layers.Flatten(),
-        layers.Dense(128, activation='relu'),
-        layers.Dense(2)
-    ]
-)
-
-
-ds_train = tf.keras.preprocessing.image_dataset_from_directory(
-    data_dir,
-    labels="inferred",
-    label_mode="int",  # categorical, binary
-    class_names=['0', '1'],
-    color_mode="rgb",
-    batch_size=batch_size,
-    image_size=(img_height, img_width),  # reshape if not in this size
-    shuffle=True,
-    seed=123,
-    validation_split=0.1,
-    subset="training",
-)
-
-ds_validation = tf.keras.preprocessing.image_dataset_from_directory(
-    data_dir,
-    labels="inferred",
-    label_mode="int",  # categorical, binary
-    class_names=['0', '1'],
-    color_mode="rgb",
-    batch_size=batch_size,
-    image_size=(img_height, img_width),  # reshape if not in this size
-    shuffle=True,
-    seed=123,
-    validation_split=0.1,
-    subset="validation",
-)
-
-model.compile(
-optimizer = keras.optimizers.Adam(),
-    loss = [keras.losses.SparseCategoricalCrossentropy(from_logits=True),],
-    metrics = ["accuracy"],
-)
-
-model.fit(ds_train, epochs=4, verbose=2)
-'''

@@ -292,7 +292,7 @@ def crear_universo_con_elitismo(metodo_seleccion, metodo_crossover, metodo_mutac
     cromosomas_maximos = list()
     cromosoma_maximo = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     poblacion = crear_poblacion(genes, tam_poblacion)
-    tot_sum =0
+    tot_sum = 0
     poblacion = ordenar(poblacion).copy()
     for i in range(int(tam_poblacion)):
             tot_sum += fun_obj(poblacion[i])
