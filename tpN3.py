@@ -121,7 +121,7 @@ def ordenar(generacion, tam_gen):
             if(generacion[m][1] > generacion[n][1]): # menor a mayor
                 generacion[m], generacion[n] = generacion[n], generacion[m]
 
-def exhaustiva(ciudad_inicial):
+def exhaustiva_1():
     min = [[], 1000000]
     rutas = []
     for ruta in range(16777216):
@@ -138,10 +138,8 @@ def exhaustiva(ciudad_inicial):
                 del posibles_ciudades[posible_ciudad_indice]
                 len -= 1
                 paso += 1
-
             if(verificar_repeticion_ruta(rutas, una_ruta) == True):
                 una_ruta[0] = []
-
             else:
                 #calcular_distancia_con_comienzo(una_ruta, ciudad_inicial)
                 calcular_distancia(una_ruta)
@@ -150,6 +148,11 @@ def exhaustiva(ciudad_inicial):
                 rutas.append(una_ruta)
                 entro = True
     return min
+
+def exhaustiva_2():
+    for ruta in range(23):
+        raiz = [ruta]
+        funcion_recursiva(raiz,ruta)
 
 def heuristica(ciudad_inicial):
     ruta = [ciudad_inicial]
