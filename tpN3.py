@@ -62,6 +62,7 @@ import matplotlib.pyplot as plt
 #parametros
 ciclos = 200  #20 o 100 o 200
 tamanio_poblacion = 50
+minimo = [[], 1000000]
 # prob_crossover = 0.75
 # prob_mutacion = 0.05
 # tam_torneo = 2 #cambiar a porcentaje
@@ -71,7 +72,7 @@ tamanio_poblacion = 50
 # [[24 ciudades], distancia]
 
 def calcular_distancia(ruta):
-    for camino in range(23): 
+    for camino in range(22): 
         ruta[1] += argentina[ruta[0][camino]][ruta[0][camino + 1]]
 
 def calcular_distancia_con_comienzo(ruta, ciudad_comienzo):
@@ -81,9 +82,9 @@ def calcular_distancia_con_comienzo(ruta, ciudad_comienzo):
     ruta[1] += argentina[ruta[0][22]][ciudad_comienzo]
 
 def calcular_distancia_heuristica(ruta):
+    longitud = len(ruta) - 1
     cont = 0
-    for camino in range(24):
-        print(ruta[camino],' y', ruta[camino + 1])
+    for camino in range(longitud):
         cont += argentina[ruta[camino]][ruta[camino + 1]]
     return cont
 
@@ -149,10 +150,33 @@ def exhaustiva_1():
                 entro = True
     return min
 
+
+
 def exhaustiva_2():
-    for ruta in range(23):
-        raiz = [ruta]
-        funcion_recursiva(raiz,ruta)
+    posibles_ciudades = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23] #esto se puede hacer como un array de 1s y 0s y en vez de eliminar un elemento, simplemente se iguala a 0 entre otros cambios
+    for ciudad in range(24):
+        una_ruta = [ciudad]
+        nuevas_posibles = posibles_ciudades.copy()
+        del nuevas_posibles[ciudad]
+        funcion_recursiva(una_ruta, nuevas_posibles)
+    return minimo
+
+def funcion_recursiva(ruta, posibles_c):
+    print(ruta)
+    if(calcular_distancia_heuristica(ruta) < minimo[1]):
+        lon = int(len(posibles_c))
+        for ciudad in range(lon):
+            una_ruta = ruta.copy()
+            una_ruta.append(posibles_c[ciudad])
+            nuevas_posibles = posibles_c.copy()
+            del nuevas_posibles[ciudad]
+            funcion_recursiva(una_ruta, nuevas_posibles)
+        if(lon == 0):
+            distancia = calcular_distancia_heuristica(ruta)
+            if(distancia < (minimo[1])):
+                print('nuevo minimo:', ruta)
+                minimo[0] = ruta
+                minimo[1] = distancia
 
 def heuristica(ciudad_inicial):
     ruta = [ciudad_inicial]
@@ -178,8 +202,8 @@ def heuristica(ciudad_inicial):
     return ruta
 
 
+min = exhaustiva_2()
 
-print(exhaustiva(1))
 
 
 
