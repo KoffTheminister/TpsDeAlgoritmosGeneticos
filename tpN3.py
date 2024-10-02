@@ -63,17 +63,18 @@ import matplotlib.pyplot as plt
 ciclos = 200  #20 o 100 o 200
 tamanio_poblacion = 50
 minimo = [[], 1000000]
-# prob_crossover = 0.75
-# prob_mutacion = 0.05
-# tam_torneo = 2 #cambiar a porcentaje
-# porcentaje_elitismo = 20 #porciento
-# cant_elite = porcentaje_elitismo*tamanio_poblacion/100
+prob_crossover = 0.75
+prob_mutacion = 0.05
+tamanio_torneo = 2 #cambiar a porcentaje
+porcentaje_elitismo = 20 #porciento
+cant_elite = porcentaje_elitismo*tamanio_poblacion/100
 
-# [[24 ciudades], distancia]
+# [[24 ciudades], distancia] este es el formato
 
 def calcular_distancia(ruta):
-    for camino in range(22): 
+    for camino in range(23):
         ruta[1] += argentina[ruta[0][camino]][ruta[0][camino + 1]]
+    ruta[1] += argentina[ruta[0][23]][ruta[0][0]]
 
 def calcular_distancia_con_comienzo(ruta, ciudad_comienzo):
     ruta[1] += argentina[ciudad_comienzo][ruta[0][0]]
@@ -87,12 +88,6 @@ def calcular_distancia_heuristica(ruta):
     for camino in range(longitud):
         cont += argentina[ruta[camino]][ruta[camino + 1]]
     return cont
-
-def calcular_total(generacion, tam_gen):
-    tot = 0
-    for c in range(tam_gen):
-        tot += generacion[c][1]
-    return tot
 
 def verificar_repeticion_ciudad(ruta, ciudad):
     repeticion = False
@@ -121,36 +116,6 @@ def ordenar(generacion, tam_gen):
         for n in range(m, tam_gen):
             if(generacion[m][1] > generacion[n][1]): # menor a mayor
                 generacion[m], generacion[n] = generacion[n], generacion[m]
-
-def exhaustiva_1():
-    min = [[], 1000000]
-    rutas = []
-    for ruta in range(16777216):
-        print(ruta)
-        entro = False
-        while(entro == False):
-            posibles_ciudades = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
-            len = 23
-            una_ruta = [[], 0]
-            paso = 0
-            while(paso <= 23): #lo bajamos a 22 por que el primer elemento ya esta ocupado
-                posible_ciudad_indice = random.randint(0,len)
-                una_ruta[0].append(posibles_ciudades[posible_ciudad_indice])
-                del posibles_ciudades[posible_ciudad_indice]
-                len -= 1
-                paso += 1
-            if(verificar_repeticion_ruta(rutas, una_ruta) == True):
-                una_ruta[0] = []
-            else:
-                #calcular_distancia_con_comienzo(una_ruta, ciudad_inicial)
-                calcular_distancia(una_ruta)
-                if(min[1] > una_ruta[1]):
-                    min = una_ruta
-                rutas.append(una_ruta)
-                entro = True
-    return min
-
-
 
 def exhaustiva_2():
     posibles_ciudades = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23] #esto se puede hacer como un array de 1s y 0s y en vez de eliminar un elemento, simplemente se iguala a 0 entre otros cambios
@@ -202,10 +167,121 @@ def heuristica(ciudad_inicial):
     return ruta
 
 
-min = exhaustiva_2()
+
+
+def calcular_total(generacion, tam_gen):
+    tot = 0
+    for c in range(tam_gen):
+        tot += generacion[c][1]
+    return tot
+
+
+def generar_gen_inicial(tam_pob):
+    generacion_inicial = []
+    posibles_ciudades = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+    tam_p_c = 23
+    for cambrian in range(tam_pob):
+        new_cambrian = [[], 0]
+        for ciudad in range(24):
+            i_random = random.randint(0, tam_p_c - ciudad )
+            new_cambrian[0].append(posibles_ciudades[i_random])
+            del posibles_ciudades[i_random]
+        calcular_distancia(new_cambrian)
+        generacion_inicial.append(new_cambrian)
+        posibles_ciudades = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+        ordenar(generacion_inicial, cambrian + 1)
+    return generacion_inicial
+
+#selecciones
+def ruleta_segun_rango(cromosomas, tam_gen):
+    padres = []
+    totsum = 0
+    k = 0
+    for k in range(len(cromosomas)):
+        totsum += k + 1
+    for padre in range(int(tam_gen)):
+        totRuleta = 0
+        flecha = random.random()*100
+        index = 0
+        condicion = True
+        while(condicion):
+            totRuleta += ((index + 1)/totsum)*100
+            if(totRuleta >= flecha):
+                padres.append(cromosomas[index])
+                condicion = False
+            else:
+                index += 1
+    return padres
+
+def ruleta_normal(cromosomas, tam_gen):
+    total = calcular_total(cromosomas, tam_gen)
+    padres = []
+    for padre in range(int(tam_gen)):
+        totRuleta = 0
+        flecha = random.random()*100
+        index = 0
+        condicion = True
+        while(condicion):
+            totRuleta += (cromosomas[index][1]/total)*100
+            if(totRuleta >= flecha):
+                padres.append(cromosomas[index])
+                condicion = False
+            else:
+                index += 1
+    return padres
+
+def seleccion_torneo(cromosomas, tam_gen):
+    padres = []
+    total = calcular_total(cromosomas, tam_gen)
+    for j in range(int(tam_gen/2)):
+        for i in range(2):
+            mejor_indice = 0
+            mejor_fitness = 0
+            for j in range(tamanio_torneo):
+                indice_elegido = random.randint(0, tam_gen - 1)
+                if((cromosomas[indice_elegido][1]/total) > mejor_fitness):
+                    mejor_fitness = cromosomas[indice_elegido][1]/total
+                    mejor_indice = indice_elegido
+            padres.append(cromosomas[mejor_indice])
+    return padres
+
+
+#[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+#[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+
+def crossover_zig_zag(padres, tam_pob):
+    pareja = 0
+    nueva_gen = []
+    while (pareja <= tam_pob):
+        if(random.random() < prob_crossover):
+            aux1 = padres[pareja][0].copy()
+            aux2 = padres[pareja + 1][0].copy()
+            turn1 = 2
+            turn2 = 1
+            index = 0
+            while(index <= tam_pob):
 
 
 
+        else:
+            nueva_gen.append(padres[pareja])
+            nueva_gen.append(padres[pareja + 1])
+        pareja += 2
+
+def crear_universo(gen_ini, cant_ciclos, seleccion, crossover, mutacion, tam_pob):
+    ejex = list()
+    valores_minimos = list()
+    valores_maximos = list()
+    valores_promedio = list()
+    generacion = generar_gen_inicial(tam_pob)
+    for ciclo in range(cant_ciclos):
+        ejex.append(ciclo)
+        valor_promedio = 0
+        valor_minimo = 1000000
+        valor_maximo = 0
+        tot_sum = 0
+        padres = seleccion(generacion, tam_pob)
+        siguiente_pob = crossover(padres, tam_pob)
 
 
 
