@@ -268,6 +268,50 @@ def crossover_zig_zag(padres, tam_pob):
             nueva_gen.append(padres[pareja + 1])
         pareja += 2
 
+
+def crossover_ciclico(padres, tam_pob):
+    pareja = 0
+    nuevo_gen1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    nuevo_gen2 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    next_generation= []
+    while (pareja < tam_pob):
+        if(random.random() < prob_crossover):
+            aux1 = padres[pareja][0].copy()
+            aux2 = padres[pareja + 1][0].copy()
+            nuevo_gen1 [0] = aux1[0]
+            buscador = aux2[0]
+            nuevo_gen2[0]= aux2[0]
+            c=1
+            band =0
+            while (band != 1) and (c <len(aux1)):
+                if(nuevo_gen1[0] == aux2[c]):
+                    for k in range(c, len(aux1)):
+                        nuevo_gen1[k]= aux1[k]
+                        nuevo_gen2[k]= aux2[k]
+                    band = 1
+                elif(band != 1) and(buscador == aux1[c]):
+                    nuevo_gen1[c]= aux1[c]
+                    buscador= aux2[c]
+                    nuevo_gen2[c]= aux2[c]
+                elif (band !=1):
+                    nuevo_gen1[c] = aux2[c]
+                    nuevo_gen2[c] = aux1[c]
+                c+=1
+            pasar1 = [[], 0]
+            pasar2 = [[], 0]
+            pasar1[0]= nuevo_gen1.copy()
+            pasar2[0]= nuevo_gen1.copy()
+            calcular_distancia(pasar1)
+            calcular_distancia(pasar2)
+            next_generation.append(pasar1)
+            next_generation.append(pasar2)
+        else:
+            next_generation.append(padres[pareja].copy())
+            next_generation.append(padres[pareja + 1].copy())
+        pareja +=2
+    return next_generation
+
+
 def crear_universo(gen_ini, cant_ciclos, seleccion, crossover, mutacion, tam_pob):
     ejex = list()
     valores_minimos = list()
@@ -282,7 +326,7 @@ def crear_universo(gen_ini, cant_ciclos, seleccion, crossover, mutacion, tam_pob
         tot_sum = 0
         padres = seleccion(generacion, tam_pob)
         siguiente_pob = crossover(padres, tam_pob)
-
+        generacion = siguiente_pob.copy()
 
 
 
