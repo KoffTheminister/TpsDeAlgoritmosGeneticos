@@ -90,7 +90,7 @@ ciclos = 200  #20 o 100 o 200
 tamanio_poblacion = 50
 minimo = [[], 1000000]
 prob_crossover = 0.75
-prob_mutacion = 0.05
+prob_mutacion = 0.905
 tamanio_torneo = 2 #cambiar a porcentaje
 porcentaje_elitismo = 20 #porciento
 cant_elite = porcentaje_elitismo*tamanio_poblacion/100
@@ -425,21 +425,21 @@ def crossover_ciclico(padres, tam_pob):
     return next_generation
 
 def mutacion_cambio(ruta):
+    nueva_ruta = ruta[:]
     if (prob_mutacion >= random.random()):
-        nueva_ruta = ruta[:]
-        nueva_ruta2 = ruta[:]
         indice1 = -1
         indice2 = -1
         
         while(indice1 == indice2):
-            indice1 = random.randrange(0, len(ruta) - 1)
-            indice2 = random.randrange(0, len(ruta) - 1)
+            indice1 = random.randrange(0, len(ruta))
+            indice2 = random.randrange(0, len(ruta))
         
-        nueva_ruta[indice1] = nueva_ruta2[indice2]
-        nueva_ruta[indice2] = nueva_ruta2[indice1]
+        print(indice1, " indice 2: ", indice2)
+        nueva_ruta[indice1] = ruta[indice2]
+        nueva_ruta[indice2] = ruta[indice1]
         
     return nueva_ruta
-        
+
 
 def crear_universo( cant_ciclos, seleccion, crossover, mutacion, tam_pob):
     ejex = list()
@@ -495,4 +495,4 @@ print("Mejor Ruta x Heuristica")
 ver_ciudades(mejorruta)
 print("")
 print("")
-crear_universo(3, ruleta_segun_rango, crossover_ciclico, mutacion_cambio , 10)
+crear_universo(3, ruleta_normal, crossover_ciclico, mutacion_cambio , 10)
