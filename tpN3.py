@@ -53,6 +53,32 @@ argentina = [[None, 715, 940, 1191, 61, 1150, 1050, 1158, 480, 1040, 1455, 1023,
              [3228, 3228, 3960, 4151, 3132, 3660, 3393, 2523, 3469, 4268, 1773, 3983, 593, 3668, 3818, 4125, 3453, 3133, 4158, 3438, 2628, 3658, None, 2268],
              [960, 1194, 2046, 2117, 957, 1629, 1359, 660, 1435, 2000, 495, 2069, 1675, 1634, 1784, 2091, 1419, 1099, 2124, 1404, 594, 1624, 2268, None]]
 
+ciudades = [
+    "Cdad. de Bs. As.",
+    "Córdoba",
+    "Corrientes",
+    "Formosa",
+    "La Plata",
+    "La Rioja",
+    "Mendoza",
+    "Neuquén",
+    "Paraná",
+    "Posadas",
+    "Rawson",
+    "Resistencia",
+    "Río Gallegos",
+    "S.F.d.V.d. Catamarca",
+    "S.M. de Tucumán",
+    "S.S. de Jujuy",
+    "Salta",
+    "San Juan",
+    "San Luis",
+    "Santa Fe",
+    "Santa Rosa",
+    "Sgo. Del Estero",
+    "Ushuaia",
+    "Viedma"
+]
 
 #librerias
 import random
@@ -69,7 +95,48 @@ tamanio_torneo = 2 #cambiar a porcentaje
 porcentaje_elitismo = 20 #porciento
 cant_elite = porcentaje_elitismo*tamanio_poblacion/100
 
-# [[24 ciudades], distancia] este es el formato
+
+
+
+
+
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+def ver_ciudades(ruta):
+    distancia_total = 0  # Inicializa la distancia total
+    recorrido = []  # Para almacenar el recorrido de ciudades
+
+    # Itera sobre los índices de la ruta
+    for i in range(len(ruta)):
+        ciudad_actual = ruta[i]
+        recorrido.append(ciudades[ciudad_actual])  # Agrega la ciudad actual al recorrido
+
+        # Si no es la última ciudad, suma la distancia al siguiente
+        if i < len(ruta) - 1:
+            ciudad_siguiente = ruta[i + 1]
+            distancia = argentina[ciudad_actual][ciudad_siguiente]
+            if distancia is not None:  # Verifica que la distancia no sea None
+                distancia_total += distancia
+
+    # Agregar la ciudad de inicio al final del recorrido
+    ciudad_inicio = ruta[0]
+    recorrido.append(ciudades[ciudad_inicio])  # Cierra el ciclo agregando la ciudad de inicio
+    distancia_de_vuelta = argentina[ruta[-1]][ciudad_inicio]
+    if distancia_de_vuelta is not None:  # Verifica que la distancia de vuelta no sea None
+        distancia_total += distancia_de_vuelta
+
+    # Imprimir el recorrido y la distancia total
+    print("Recorrido de ciudades:", " -> ".join(recorrido))
+    print("Distancia total:", distancia_total)
+
+    return distancia_total  # Retorna la distancia total
+
+
+def traducir_ruta(ruta_indices, ciudades):
+    return [ciudades[i] for i in ruta_indices]
+
+def traducir_generacion(generacion, ciudades):
+    return [[traducir_ruta(ruta[0], ciudades), ruta[1]] for ruta in generacion]
 
 def calcular_distancia(ruta):
     for camino in range(23):
@@ -117,6 +184,15 @@ def ordenar(generacion, tam_gen):
             if(generacion[m][1] > generacion[n][1]): # menor a mayor
                 generacion[m], generacion[n] = generacion[n], generacion[m]
 
+
+
+
+
+
+
+
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
 def exhaustiva_2():
     posibles_ciudades = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23] #esto se puede hacer como un array de 1s y 0s y en vez de eliminar un elemento, simplemente se iguala a 0 entre otros cambios
     for ciudad in range(24):
@@ -143,32 +219,89 @@ def funcion_recursiva(ruta, posibles_c):
                 minimo[0] = ruta
                 minimo[1] = distancia
 
-def heuristica(ciudad_inicial):
-    ruta = [ciudad_inicial]
-    posibles_ciudades = []
-    for k in range(24):
-        if(k != ciudad_inicial):
-            posibles_ciudades.append(k)
-    index = 0
-    posicion_actual = ciudad_inicial
-    while(index <= 22):
-        min = 10000
-        min_i = None
-        i = 0
-        for i in range(len(posibles_ciudades)):
-            if(argentina[posicion_actual][posibles_ciudades[i]] < min):
-                min = argentina[posicion_actual][posibles_ciudades[i]]
-                min_i = i
-        ruta.append(posibles_ciudades[min_i])
-        posicion_actual = posibles_ciudades[min_i]
-        del posibles_ciudades[min_i]
-        index += 1
-    ruta.append(ciudad_inicial)
-    return ruta
 
 
 
 
+
+
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+# def heuristica():
+#     mejor_distancia = float
+#     mejor_ruta = []
+
+#     for ciudad_inicial in range(24):
+#         ruta = [ciudad_inicial]
+#         posibles_ciudades = []
+
+#         for k in range(24):
+#             if(k != ciudad_inicial):
+#                 posibles_ciudades.append(k)
+#         index = 0
+#         posicion_actual = ciudad_inicial
+
+#         while(index <= 22):
+#             min = 10000
+#             min_i = None
+#             i = 0
+#             for i in range(len(posibles_ciudades)):
+#                 if(argentina[posicion_actual][posibles_ciudades[i]] < min):
+#                     min = argentina[posicion_actual][posibles_ciudades[i]]
+#                     min_i = i
+#             ruta.append(posibles_ciudades[min_i])
+#             posicion_actual = posibles_ciudades[min_i]
+#             del posibles_ciudades[min_i]
+#             index += 1
+#         ruta.append(ciudad_inicial)
+        
+#         distancia_total = ver_ciudades(ruta)
+
+#         if distancia_total < mejor_distancia:
+#             mejor_distancia = distancia_total
+#             mejor_ruta = ruta
+
+#     return mejor_ruta 
+
+def heuristica():
+    mejor_distancia = float('inf') 
+    mejor_ruta = [] 
+
+    for ciudad_inicial in range(24):
+        ruta = [ciudad_inicial]
+        posibles_ciudades = [k for k in range(24) if k != ciudad_inicial]
+        posicion_actual = ciudad_inicial
+
+        while posibles_ciudades:
+            distancia_min = float('inf')
+            min_i = None
+            for i in range(len(posibles_ciudades)):
+                distancia = argentina[posicion_actual][posibles_ciudades[i]]
+                if distancia is not None and distancia < distancia_min:
+                    distancia_min = distancia
+                    min_i = i
+            
+            if min_i is not None:
+                ruta.append(posibles_ciudades[min_i])
+                posicion_actual = posibles_ciudades[min_i]
+                del posibles_ciudades[min_i]
+
+        ruta.append(ciudad_inicial)
+
+        distancia_total = calcular_distancia_heuristica(ruta)
+
+        # Compara con la mejor distancia encontrada
+        if distancia_total < mejor_distancia:
+            mejor_distancia = distancia_total
+            mejor_ruta = ruta
+
+    return mejor_ruta  # Retorna la mejor ruta
+
+
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
 def calcular_total(generacion, tam_gen):
     tot = 0
     for c in range(tam_gen):
@@ -249,32 +382,85 @@ def seleccion_torneo(cromosomas, tam_gen):
 #[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
 #[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
 
-def crossover_zig_zag(padres, tam_pob):
+def crossover_ciclico(padres, tam_pob):
     pareja = 0
-    nueva_gen = []
-    while (pareja <= tam_pob):
+    nuevo_gen1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    nuevo_gen2 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    next_generation= []
+    while (pareja < tam_pob):
         if(random.random() < prob_crossover):
             aux1 = padres[pareja][0].copy()
             aux2 = padres[pareja + 1][0].copy()
-            turn1 = 2
-            turn2 = 1
-            index = 0
-            while(index <= tam_pob):
-
-
-
+            nuevo_gen1 [0] = aux1[0]
+            buscador = aux2[0]
+            nuevo_gen2[0]= aux2[0]
+            c=1
+            band =0
+            while (band != 1) and (c < len(aux1)):
+                if(nuevo_gen1[0] == aux2[c]):
+                    for k in range(c, len(aux1)):
+                        nuevo_gen1[k] = aux1[k]
+                        nuevo_gen2[k] = aux2[k]
+                    band = 1
+                elif(band != 1) and(buscador == aux1[c]):
+                    nuevo_gen1[c]= aux1[c]
+                    buscador= aux2[c]
+                    nuevo_gen2[c]= aux2[c]
+                elif (band !=1):
+                    nuevo_gen1[c] = aux2[c]
+                    nuevo_gen2[c] = aux1[c]
+                c+=1
+            pasar1 = [[], 0]
+            pasar2 = [[], 0]
+            pasar1[0]= nuevo_gen1.copy()
+            pasar2[0]= nuevo_gen1.copy()
+            calcular_distancia(pasar1)
+            calcular_distancia(pasar2)
+            next_generation.append(pasar1)
+            next_generation.append(pasar2)
         else:
-            nueva_gen.append(padres[pareja])
-            nueva_gen.append(padres[pareja + 1])
-        pareja += 2
+            next_generation.append(padres[pareja].copy())
+            next_generation.append(padres[pareja + 1].copy())
+        pareja +=2
+    return next_generation
 
-def crear_universo(gen_ini, cant_ciclos, seleccion, crossover, mutacion, tam_pob):
+def mutacion_cambio(ruta):
+    if (prob_mutacion >= random.random()):
+        nueva_ruta = ruta[:]
+        nueva_ruta2 = ruta[:]
+        indice1 = -1
+        indice2 = -1
+        
+        while(indice1 == indice2):
+            indice1 = random.randrange(0, len(ruta) - 1)
+            indice2 = random.randrange(0, len(ruta) - 1)
+        
+        nueva_ruta[indice1] = nueva_ruta2[indice2]
+        nueva_ruta[indice2] = nueva_ruta2[indice1]
+        
+    return nueva_ruta
+        
+
+def crear_universo( cant_ciclos, seleccion, crossover, mutacion, tam_pob):
     ejex = list()
     valores_minimos = list()
     valores_maximos = list()
     valores_promedio = list()
     generacion = generar_gen_inicial(tam_pob)
-    for ciclo in range(cant_ciclos):
+   
+    print("Generacion inicial")
+    for idx, individuo in enumerate(generacion):
+            ruta_traducida = traducir_ruta(individuo[0], ciudades)
+            distancia_total = individuo[1]
+            
+            # Visualización mejorada
+            print(f"Ruta {idx + 1}:")
+            print(f"  Ciudades: {' -> '.join(ruta_traducida)}")
+            print(f"  Distancia total: {distancia_total}\n")
+    # print(traducir_generacion(generacion, ciudades))
+    
+    
+    for ciclo in range(cant_ciclos): 
         ejex.append(ciclo)
         valor_promedio = 0
         valor_minimo = 1000000
@@ -282,18 +468,31 @@ def crear_universo(gen_ini, cant_ciclos, seleccion, crossover, mutacion, tam_pob
         tot_sum = 0
         padres = seleccion(generacion, tam_pob)
         siguiente_pob = crossover(padres, tam_pob)
+        generacion = siguiente_pob.copy()
+
+    print(" ")
+    print(" ")
+    print(" ")
+    print(" ")
+    print("Ultima generacion")
+    for idx, individuo in enumerate(generacion):
+        ruta_traducida = traducir_ruta(individuo[0], ciudades)
+        distancia_total = individuo[1]
+        
+        # Visualización mejorada
+        print(f"Ruta {idx + 1}:")
+        print(f"  Ciudades: {' -> '.join(ruta_traducida)}")
+        print(f"  Distancia total: {distancia_total}\n")
 
 
 
+#print(min)
+#print(calcular_distancia_heuristica(min))
 
 
-
-
-
-
-
-
-
-
-
-
+mejorruta = heuristica()
+print("Mejor Ruta x Heuristica")
+ver_ciudades(mejorruta)
+print("")
+print("")
+crear_universo(3, ruleta_segun_rango, crossover_ciclico, mutacion_cambio , 10)
