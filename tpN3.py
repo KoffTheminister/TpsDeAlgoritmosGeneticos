@@ -382,6 +382,15 @@ def seleccion_torneo(cromosomas, tam_gen):
 #[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
 #[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
 
+def comprobar(n1, n2):
+    band = False
+    comp = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+    for i in range(24):
+        if (comp[i] not in n1) or (comp[i] not in n2):
+            band =True
+    return band
+
+
 def crossover_ciclico(padres, tam_pob):
     pareja = 0
     nuevo_gen1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
@@ -396,11 +405,11 @@ def crossover_ciclico(padres, tam_pob):
             nuevo_gen2[0]= aux2[0]
             c=1
             band =0
-            while (band != 1) and (c < len(aux1)):
+            while (band != 1) and (c <len(aux1)):
                 if(nuevo_gen1[0] == aux2[c]):
                     for k in range(c, len(aux1)):
-                        nuevo_gen1[k] = aux1[k]
-                        nuevo_gen2[k] = aux2[k]
+                        nuevo_gen1[k]= aux1[k]
+                        nuevo_gen2[k]= aux2[k]
                     band = 1
                 elif(band != 1) and(buscador == aux1[c]):
                     nuevo_gen1[c]= aux1[c]
@@ -410,12 +419,17 @@ def crossover_ciclico(padres, tam_pob):
                     nuevo_gen1[c] = aux2[c]
                     nuevo_gen2[c] = aux1[c]
                 c+=1
-            pasar1 = [[], 0]
-            pasar2 = [[], 0]
-            pasar1[0]= nuevo_gen1.copy()
-            pasar2[0]= nuevo_gen1.copy()
-            calcular_distancia(pasar1)
-            calcular_distancia(pasar2)
+            if(comprobar(nuevo_gen1,nuevo_gen2) ):
+                pasar1 =padres[pareja].copy()
+                pasar2 = padres[pareja + 1].copy()
+                
+            else:
+                pasar1 = [[], 0]
+                pasar2 = [[], 0]
+                pasar1[0]= nuevo_gen1.copy()
+                pasar2[0]= nuevo_gen1.copy()
+                calcular_distancia(pasar1)
+                calcular_distancia(pasar2)
             next_generation.append(pasar1)
             next_generation.append(pasar2)
         else:
@@ -423,6 +437,7 @@ def crossover_ciclico(padres, tam_pob):
             next_generation.append(padres[pareja + 1].copy())
         pareja +=2
     return next_generation
+
 
 def mutacion_cambio(ruta):
     nueva_ruta = ruta[:]
