@@ -93,44 +93,33 @@ prob_crossover = 0.75
 prob_mutacion = 0.05
 tamanio_torneo = 2 #cambiar a porcentaje
 porcentaje_elitismo = 20 #porciento
-cant_elite = porcentaje_elitismo*tamanio_poblacion/100
-
-
-
-
-
-
+cantidad_elite = porcentaje_elitismo*tamanio_poblacion/100
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def ver_ciudades(ruta):
     distancia_total = 0  # Inicializa la distancia total
     recorrido = []  # Para almacenar el recorrido de ciudades
-
     # Itera sobre los índices de la ruta
     for i in range(len(ruta)):
         ciudad_actual = ruta[i]
         recorrido.append(ciudades[ciudad_actual])  # Agrega la ciudad actual al recorrido
-
         # Si no es la última ciudad, suma la distancia al siguiente
         if i < len(ruta) - 1:
             ciudad_siguiente = ruta[i + 1]
             distancia = argentina[ciudad_actual][ciudad_siguiente]
             if distancia is not None:  # Verifica que la distancia no sea None
                 distancia_total += distancia
-
     # Agregar la ciudad de inicio al final del recorrido
     ciudad_inicio = ruta[0]
     recorrido.append(ciudades[ciudad_inicio])  # Cierra el ciclo agregando la ciudad de inicio
     distancia_de_vuelta = argentina[ruta[-1]][ciudad_inicio]
     if distancia_de_vuelta is not None:  # Verifica que la distancia de vuelta no sea None
         distancia_total += distancia_de_vuelta
-
     # Imprimir el recorrido y la distancia total
     print("Recorrido de ciudades:", " -> ".join(recorrido))
     print("Distancia total:", distancia_total)
 
     return distancia_total  # Retorna la distancia total
-
 
 def traducir_ruta(ruta_indices, ciudades):
     return [ciudades[i] for i in ruta_indices]
@@ -181,16 +170,8 @@ def verificar_repeticion_ruta(rutas, posible_ruta):
 def ordenar(generacion, tam_gen):
     for m in range(tam_gen):
         for n in range(m, tam_gen):
-            if(generacion[m][1] > generacion[n][1]): # menor a mayor
+            if(generacion[m][1] < generacion[n][1]): # mayor a menor
                 generacion[m], generacion[n] = generacion[n], generacion[m]
-
-
-
-
-
-
-
-
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def exhaustiva_2():
@@ -218,14 +199,6 @@ def funcion_recursiva(ruta, posibles_c):
                 print('nuevo minimo:', ruta)
                 minimo[0] = ruta
                 minimo[1] = distancia
-
-
-
-
-
-
-
-
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -391,6 +364,8 @@ def ruleta_segun_rango(cromosomas, tam_gen):
                 index += 1
     return padres
 
+# hay un problema con ruleta normal, una ruta que es mas larga tiene mas chances de ser elegida ya que su (cromosomas[index][1]/total)*100 es 
+# mayor al de una ruta mas pequeña. ruleta segun ratngo resuelve este problema
 def ruleta_normal(cromosomas, tam_gen):
     total = calcular_total(cromosomas, tam_gen)
     padres = []
@@ -422,10 +397,6 @@ def seleccion_torneo(cromosomas, tam_gen):
                     mejor_indice = indice_elegido
             padres.append(cromosomas[mejor_indice])
     return padres
-
-
-#[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
-#[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
 
 def comprobar(n1, n2):
     band = False
@@ -482,14 +453,63 @@ def crossover_ciclico(padres, tam_pob):
         pareja +=2
     return next_generation
 
+def crossover_corte(padres, tam_pob):
+    pareja = 0
+    next_generation = []
+    while (pareja < tam_pob):
+        if(random.random() < prob_crossover):
+            nuevo_gen1 = [[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1], 0]
+            nuevo_gen2 = [[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1], 0]
+            corte1 = random.randint(0, 23)
+            corte2 = random.randint(0, 23)
+            while(corte1 == corte2):
+                corte2 = random.randint(0, 23)
+            if(corte1 > corte2):
+                corte1, corte2 = corte2, corte1
+            nuevo_gen1[0][corte1:corte2] = padres[pareja][0][corte1:corte2]
+            ciudad = 0
+            pointer = 0
+            for ciudad in range(24):
+                while(nuevo_gen1[0][ciudad] == -1):
+                    if((padres[pareja + 1][0][pointer] in nuevo_gen1[0])):
+                        pointer += 1
+                    else:
+                        nuevo_gen1[0][ciudad] = padres[pareja + 1][0][pointer]
+                        pointer += 1
+
+            corte1 = random.randint(0, 23)
+            corte2 = random.randint(0, 23)
+            while(corte1 == corte2):
+                corte2 = random.randint(0, 23)
+            if(corte1 > corte2):
+                corte1, corte2 = corte2, corte1
+            nuevo_gen2[0][corte1:corte2] = padres[pareja + 1][0][corte1:corte2]
+            ciudad = 0
+            pointer = 0
+            for ciudad in range(24):
+                while(nuevo_gen2[0][ciudad] == -1):
+                    if((padres[pareja][0][pointer] in nuevo_gen2[0])):
+                        pointer += 1
+                    else:
+                        nuevo_gen2[0][ciudad] = padres[pareja][0][pointer]
+                        pointer += 1
+            calcular_distancia(nuevo_gen1)
+            calcular_distancia(nuevo_gen2)
+            next_generation.append(nuevo_gen1.copy())
+            next_generation.append(nuevo_gen2.copy())
+        else:
+            next_generation.append(padres[pareja].copy())
+            next_generation.append(padres[pareja + 1].copy())
+        pareja +=2
+    return next_generation
 
 def mutacion_cambio(ruta):
     nueva_ruta = ruta[:]
-    if prob_mutacion >= random.random():
+    if(prob_mutacion >= random.random()):
         indice1 = -1
         indice2 = -1
         
-        while indice1 == indice2:
+        while(indice1 == indice2):
             indice1 = random.randrange(0, len(ruta))
             indice2 = random.randrange(0, len(ruta))
         
@@ -499,29 +519,21 @@ def mutacion_cambio(ruta):
     return nueva_ruta
 
 def mutacion_inversion(ruta):
-    # Crear una copia de la ruta para no modificar el original
     nueva_ruta = ruta[:]
-    
-    # Seleccionar dos índices aleatorios para la inversión
     indice1 = random.randint(0, len(ruta) - 1)
     indice2 = random.randint(0, len(ruta) - 1)
-    
-    # Asegurarse de que indice1 sea menor que indice2
-    if indice1 > indice2:
+    if(indice1 > indice2):
         indice1, indice2 = indice2, indice1
-    
-    # Invertir el segmento de la ruta entre indice1 e indice2
     nueva_ruta[indice1:indice2 + 1] = reversed(nueva_ruta[indice1:indice2 + 1])
-    
     return nueva_ruta
 
-def crear_universo( cant_ciclos, seleccion, crossover, mutacion, tam_pob):
+def crear_universo(cant_ciclos, seleccion, crossover, mutacion, tam_pob):
     ejex = list()
     valores_minimos = list()
     valores_maximos = list()
     valores_promedio = list()
     generacion = generar_gen_inicial(tam_pob)
-   
+    '''
     print("Generacion inicial")
     for idx, individuo in enumerate(generacion):
             ruta_traducida = traducir_ruta(individuo[0], ciudades)
@@ -531,44 +543,38 @@ def crear_universo( cant_ciclos, seleccion, crossover, mutacion, tam_pob):
             print(f"Ruta {idx + 1}:")
             print(f"  Ciudades: {' -> '.join(ruta_traducida)}")
             print(f"  Distancia total: {distancia_total}\n")
-    
+    '''
     for ciclo in range(cant_ciclos): 
-        
         ejex.append(ciclo)
         valor_promedio = 0
-        valor_minimo = 1000000
-        valor_maximo = 0
         tot_sum = 0
         padres = seleccion(generacion, tam_pob)
         siguiente_pob = crossover(padres, tam_pob)
-        for i in range(len(siguiente_pob)-1):
+        i = 0
+        for i in range(len(siguiente_pob) - 1):
             siguiente_pob[i][0] = mutacion(siguiente_pob[i][0])
             calcular_distancia(siguiente_pob[i])
-        ordenar(generacion, tam_pob)
+        
+        ordenar(siguiente_pob, tam_pob)
         generacion = siguiente_pob.copy()
-        
-        for i in range(len(siguiente_pob)-1):
+        i = 0
+        for i in range(len(generacion) - 1):
             tot_sum += generacion[i][1]
-        valor_promedio = tot_sum / len(siguiente_pob)-1
-        
-        valores_minimos.append(generacion[-1][1])
-        valores_maximos.append(generacion[0][1]) 
+        valor_promedio = tot_sum/(len(generacion) - 1)
+        valores_minimos.append(generacion[tam_pob - 1][1])
+        valores_maximos.append(generacion[0][1])
+        if(generacion[tam_pob - 1][1] > generacion[0][1]):
+            print(generacion)
         valores_promedio.append(valor_promedio)
-
-        print(" ")
-        print(" ")
-        print(" ")
-        print(" ")
         print(ciclo)
+        '''
         for idx, individuo in enumerate(generacion):
             ruta_traducida = traducir_ruta(individuo[0], ciudades)
             distancia_total = individuo[1]
-            
             # Visualización mejorada
             print(f"Ruta {idx + 1}:")
             print(f"  Ciudades: {' -> '.join(ruta_traducida)}")
             print(f"  Distancia total: {distancia_total}\n")
-
 
     print(" ")
     print(" ")
@@ -578,18 +584,13 @@ def crear_universo( cant_ciclos, seleccion, crossover, mutacion, tam_pob):
     for idx, individuo in enumerate(generacion):
         ruta_traducida = traducir_ruta(individuo[0], ciudades)
         distancia_total = individuo[1]
-        
         # Visualización mejorada
         print(f"Ruta {idx + 1}:")
         print(f"  Ciudades: {' -> '.join(ruta_traducida)}")
         print(f"  Distancia total: {distancia_total}\n")
-
-
+        '''
     numeros = int(ciclos/10)
-
-
-    fig, axs = plt.subplots(1, 3, figsize=(12, 4))  # Reducimos el tamaño de la figura
-
+    fig, axs = plt.subplots(1, 3, figsize=(15, 4))  # Reducimos el tamaño de la figura
     fig.suptitle('Estadísticas Finales sin Elitismo', fontsize=16)
     # Primer gráfico: Valores mínimos
     axs[0].plot(ejex, valores_minimos, 'b')
@@ -601,7 +602,6 @@ def crear_universo( cant_ciclos, seleccion, crossover, mutacion, tam_pob):
     axs[0].set_xticks(range(0, ciclos + 1, numeros))
     axs[0].set_yticks(range(0, 200000, int(200000/10)))
     axs[0].legend(loc='best')
-
     # Segundo gráfico: Valores máximos
     axs[1].plot(ejex, valores_maximos, 'r')
     axs[1].set_title('Valores Máximos')
@@ -612,7 +612,6 @@ def crear_universo( cant_ciclos, seleccion, crossover, mutacion, tam_pob):
     axs[1].set_xticks(range(0, ciclos + 1, numeros))
     axs[1].set_yticks(range(0, 200000, int(200000/10)))
     axs[1].legend(loc='best')
-
     # Tercer gráfico: Valores promedio
     axs[2].plot(ejex, valores_promedio, 'g')
     axs[2].set_title('Valores Promedios')
@@ -623,35 +622,128 @@ def crear_universo( cant_ciclos, seleccion, crossover, mutacion, tam_pob):
     axs[2].set_xticks(range(0, ciclos + 1, numeros))
     axs[2].set_yticks(range(0, 200000, int(200000/10)))
     axs[2].legend(loc='best')
+    plt.tight_layout()
+    plt.show()
 
+def crear_universo_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, tam_pob, cant_elite):
+    ejex = list()
+    valores_minimos = list()
+    valores_maximos = list()
+    valores_promedio = list()
+    generacion = generar_gen_inicial(tam_pob)
+    '''
+    print("Generacion inicial")
+    for idx, individuo in enumerate(generacion):
+            ruta_traducida = traducir_ruta(individuo[0], ciudades)
+            distancia_total = individuo[1]
+            
+            # Visualización mejorada
+            print(f"Ruta {idx + 1}:")
+            print(f"  Ciudades: {' -> '.join(ruta_traducida)}")
+            print(f"  Distancia total: {distancia_total}\n")
+    '''
+    for ciclo in range(cant_ciclos): 
+        ejex.append(ciclo)
+        valor_promedio = 0
+        tot_sum = 0
+        elites = []
+        ciudad = 0
+        for ciudad in range(int(cant_elite)):
+            elites.append(generacion[tam_pob - 1 - ciudad])
+        padres = seleccion(generacion, tam_pob)
+        siguiente_pob = crossover(padres, tam_pob)
+
+        for i in range(len(siguiente_pob) - 1):
+            siguiente_pob[i][0] = mutacion(siguiente_pob[i][0])
+            calcular_distancia(siguiente_pob[i])
+
+        ordenar(siguiente_pob, tam_pob)
+        ciudad = 0
+        for ciudad in range(int(cant_elite)):
+            siguiente_pob[ciudad] = elites[ciudad]
+        ordenar(siguiente_pob, tam_pob)
+        generacion = siguiente_pob.copy() 
+
+        for i in range(len(generacion)-1):
+            tot_sum += generacion[i][1]
+        valor_promedio = tot_sum / len(generacion)-1
+        valores_minimos.append(generacion[tam_pob - 1][1])
+        valores_maximos.append(generacion[0][1]) 
+        valores_promedio.append(valor_promedio)
+        print(ciclo)
+
+        for idx, individuo in enumerate(generacion):
+            ruta_traducida = traducir_ruta(individuo[0], ciudades)
+            distancia_total = individuo[1]
+            # Visualización mejorada
+            print(f"Ruta {idx + 1}:")
+            print(f"  Ciudades: {' -> '.join(ruta_traducida)}")
+            print(f"  Distancia total: {distancia_total}\n")
+    print(" ")
+    print(" ")
+    print(" ")
+    print(" ")
+    print("Ultima generacion")
+    for idx, individuo in enumerate(generacion):
+        ruta_traducida = traducir_ruta(individuo[0], ciudades)
+        distancia_total = individuo[1]
+        # Visualización mejorada
+        print(f"Ruta {idx + 1}:")
+        print(f"  Ciudades: {' -> '.join(ruta_traducida)}")
+        print(f"  Distancia total: {distancia_total}\n")
+    numeros = int(ciclos/10)
+    fig, axs = plt.subplots(1, 3, figsize=(15, 4))  # Reducimos el tamaño de la figura
+    fig.suptitle('Estadísticas Finales sin Elitismo', fontsize=16)
+    # Primer gráfico: Valores mínimos
+    axs[0].plot(ejex, valores_minimos, 'b')
+    axs[0].set_title('Valores Mínimos')
+    axs[0].set_xlabel('Corrida')
+    axs[0].set_ylabel('Valores')
+    axs[0].set_xlim(0, ciclos - 1)
+    axs[0].set_ylim(0, 200000)
+    axs[0].set_xticks(range(0, ciclos + 1, numeros))
+    axs[0].set_yticks(range(0, 200000, int(200000/10)))
+    axs[0].legend(loc='best')
+    # Segundo gráfico: Valores máximos
+    axs[1].plot(ejex, valores_maximos, 'r')
+    axs[1].set_title('Valores Máximos')
+    axs[1].set_xlabel('Corrida')
+    axs[1].set_ylabel('Valores')
+    axs[1].set_xlim(0, ciclos - 1)
+    axs[1].set_ylim(0, 200000)
+    axs[1].set_xticks(range(0, ciclos + 1, numeros))
+    axs[1].set_yticks(range(0, 200000, int(200000/10)))
+    axs[1].legend(loc='best')
+    # Tercer gráfico: Valores promedio
+    axs[2].plot(ejex, valores_promedio, 'g')
+    axs[2].set_title('Valores Promedios')
+    axs[2].set_xlabel('Corrida')
+    axs[2].set_ylabel('Valores')
+    axs[2].set_xlim(0, ciclos - 1)
+    axs[2].set_ylim(0, 200000)
+    axs[2].set_xticks(range(0, ciclos + 1, numeros))
+    axs[2].set_yticks(range(0, 200000, int(200000/10)))
+    axs[2].legend(loc='best')
     plt.tight_layout()
     plt.show()
 
 
-
-
-
-#print(min)
-#print(calcular_distancia_heuristica(min))
-
+'''
 opc = -1
-while opc != 0 and opc < 3:
+while(opc != 0 and opc < 3):
     print("1: Heuristica")
     print("2: Algoritmos geneticos")
     print("0: Salir")
     opc = int(input("Ingrese una opcion: "))
-
-    if opc == 1:
+    if(opc == 1):
         mejorruta, mejordistancia = heuristicainicial(int(input()))
         print("Mejor Ruta x Heuristica")
         ver_ciudadeini(mejorruta)
         print(mejordistancia)
-        #ver_ciudades(mejorruta)
-        
-    elif opc == 2:
+        #ver_ciudades(mejorruta)     
+    elif(opc == 2):
         params = input("Desea cambiar los parametros? Y / N: ")
-        
-        if params.lower() == "y":
+        if(params.lower() == "y"):
             prob_crossover = int(input("Ingrese la probabilidad de crossover (0-100): ")) / 100
             prob_mutacion = int(input("Ingrese la probabilidad de mutacion (0-100): ")) / 100
             ciclos = int(input("Ingrese la cantidad de ciclos: "))
@@ -660,14 +752,15 @@ while opc != 0 and opc < 3:
             print(f"Probabilidad de mutación: {prob_mutacion}")
         
         crear_universo(ciclos, ruleta_normal, crossover_ciclico, mutacion_inversion, 10)
+'''
 
 
 
-# for i in range(100):
-#     print(i)
-#     mejorruta = heuristica()
-#     print("Mejor Ruta x Heuristica")
-#     ver_ciudades(mejorruta)
-#     print("")
-#     print("")
-#     crear_universo(3, ruleta_normal, crossover_ciclico, mutacion_cambio , 10)
+crear_universo_con_elitismo(10000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite)
+
+
+
+
+
+
+
