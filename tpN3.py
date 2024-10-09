@@ -89,31 +89,29 @@ import matplotlib.pyplot as plt
 ciclos = 10  #20 o 100 o 200
 tamanio_poblacion = 50
 minimo = [[], 1000000]
-prob_crossover = 0.75
-prob_mutacion = 0.05
+prob_crossover = 0.8
+prob_mutacion = 0.667
 tamanio_torneo = 2 #cambiar a porcentaje
 porcentaje_elitismo = 20 #porciento
 cantidad_elite = porcentaje_elitismo*tamanio_poblacion/100
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
+
 def ver_ciudades(ruta):
-    distancia_total = 0  # Inicializa la distancia total
-    recorrido = []  # Para almacenar el recorrido de ciudades
-    # Itera sobre los índices de la ruta
+    distancia_total = 0 
+    recorrido = [] 
     for i in range(len(ruta)):
         ciudad_actual = ruta[i]
-        recorrido.append(ciudades[ciudad_actual])  # Agrega la ciudad actual al recorrido
-        # Si no es la última ciudad, suma la distancia al siguiente
-        if i < len(ruta) - 1:
+        recorrido.append(ciudades[ciudad_actual])
+        if(i < len(ruta) - 1):
             ciudad_siguiente = ruta[i + 1]
             distancia = argentina[ciudad_actual][ciudad_siguiente]
-            if distancia is not None:  # Verifica que la distancia no sea None
+            if(distancia is not None):  
                 distancia_total += distancia
-    # Agregar la ciudad de inicio al final del recorrido
     ciudad_inicio = ruta[0]
-    recorrido.append(ciudades[ciudad_inicio])  # Cierra el ciclo agregando la ciudad de inicio
+    recorrido.append(ciudades[ciudad_inicio])
     distancia_de_vuelta = argentina[ruta[-1]][ciudad_inicio]
-    if distancia_de_vuelta is not None:  # Verifica que la distancia de vuelta no sea None
+    if(distancia_de_vuelta is not None):
         distancia_total += distancia_de_vuelta
     # Imprimir el recorrido y la distancia total
     print("Recorrido de ciudades:", " -> ".join(recorrido))
@@ -508,14 +506,24 @@ def mutacion_cambio(ruta):
     if(prob_mutacion >= random.random()):
         indice1 = -1
         indice2 = -1
-        
         while(indice1 == indice2):
             indice1 = random.randrange(0, len(ruta))
             indice2 = random.randrange(0, len(ruta))
-        
         nueva_ruta[indice1] = ruta[indice2]
         nueva_ruta[indice2] = ruta[indice1]
-        
+    return nueva_ruta
+
+def mutacion_cambio_doble(ruta):
+    nueva_ruta = ruta[:]
+    if(prob_mutacion >= random.random()):
+        for vez in range(2):
+            indice1 = -1
+            indice2 = -1
+            while(indice1 == indice2):
+                indice1 = random.randrange(0, len(ruta))
+                indice2 = random.randrange(0, len(ruta))
+            nueva_ruta[indice1] = ruta[indice2]
+            nueva_ruta[indice2] = ruta[indice1]
     return nueva_ruta
 
 def mutacion_inversion(ruta):
@@ -649,7 +657,7 @@ def crear_universo_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, tam
         elites = []
         ciudad = 0
         for ciudad in range(int(cant_elite)):
-            elites.append(generacion[tam_pob - 1 - ciudad])
+            elites.append(generacion[tam_pob - 1 - ciudad].copy()) #
         padres = seleccion(generacion, tam_pob)
         siguiente_pob = crossover(padres, tam_pob)
 
@@ -660,7 +668,7 @@ def crear_universo_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, tam
         ordenar(siguiente_pob, tam_pob)
         ciudad = 0
         for ciudad in range(int(cant_elite)):
-            siguiente_pob[ciudad] = elites[ciudad]
+            siguiente_pob[ciudad] = elites[ciudad].copy() #
         ordenar(siguiente_pob, tam_pob)
         generacion = siguiente_pob.copy() 
 
@@ -727,6 +735,90 @@ def crear_universo_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, tam
     plt.tight_layout()
     plt.show()
 
+#hace un tiempo descubri el concepto de algoritmos geneticos inspirados en quantica, lo que hace basicamente es crear varios universos que corren de manera normal solo que se introduce un operador llamado crossover quantico
+#el cual toma todos los cromosomas en la posicion i de cada universo y hace uno solo nuevo. si sale algo lindo capaz lo podemos poner como una curiosidad.
+def crear_multiverso_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, tam_pob, cant_elite):
+    ejex = list()
+    valores_minimos = list()
+    valores_maximos = list()
+    valores_promedio = list()
+    multiverso = []
+    for universo in range(24):
+        multiverso.append(generar_gen_inicial(tam_pob))
+
+    for ciclo in range(cant_ciclos):
+        universo = 0
+        ejex.append(ciclo)
+        valor_promedio = 0
+        tot_sum = 0
+        valor_minimo = [[], 100000]
+        valor_maximo = [[], 0]
+        for universo in range(24):
+            elites = []
+            ciudad = 0
+            for ciudad in range(int(cant_elite)):
+                elites.append(multiverso[universo][tam_pob - 1 - ciudad].copy())   #(generacion[tam_pob - 1 - ciudad])
+            padres = seleccion(multiverso[universo], tam_pob)
+            siguiente_pob = crossover(padres, tam_pob)
+
+            for i in range(len(siguiente_pob) - 1):
+                siguiente_pob[i][0] = mutacion(siguiente_pob[i][0])
+                calcular_distancia(siguiente_pob[i])
+
+            ordenar(siguiente_pob, tam_pob)
+            ciudad = 0
+            for ciudad in range(int(cant_elite)):
+                siguiente_pob[ciudad] = elites[ciudad].copy()
+            ordenar(siguiente_pob, tam_pob)
+            multiverso[universo] = siguiente_pob.copy() 
+
+            for i in range(len(multiverso[universo]) - 1):
+                tot_sum += multiverso[universo][i][1]
+            if(multiverso[universo][int(len(multiverso[universo]) - 1)][1] < valor_minimo[1]):
+                 valor_minimo = multiverso[universo][int(len(multiverso[universo]) - 1)].copy()
+            if(multiverso[universo][0][1] < valor_maximo[1]):
+                 valor_maximo = multiverso[universo][0].copy()
+        valor_promedio = (tot_sum)/(24*(len(multiverso[0])))
+        valores_minimos.append(valor_minimo[1])
+        valores_maximos.append(valor_maximo[1])
+    print(valor_minimo)
+
+    numeros = int(ciclos/10)
+    fig, axs = plt.subplots(1, 3, figsize=(15, 4))  # Reducimos el tamaño de la figura
+    fig.suptitle('Estadísticas Finales sin Elitismo', fontsize=16)
+    # Primer gráfico: Valores mínimos
+    axs[0].plot(ejex, valores_minimos, 'b')
+    axs[0].set_title('Valores Mínimos')
+    axs[0].set_xlabel('Corrida')
+    axs[0].set_ylabel('Valores')
+    axs[0].set_xlim(0, ciclos - 1)
+    axs[0].set_ylim(0, 200000)
+    axs[0].set_xticks(range(0, ciclos + 1, numeros))
+    axs[0].set_yticks(range(0, 200000, int(200000/10)))
+    axs[0].legend(loc='best')
+    # Segundo gráfico: Valores máximos
+    axs[1].plot(ejex, valores_maximos, 'r')
+    axs[1].set_title('Valores Máximos')
+    axs[1].set_xlabel('Corrida')
+    axs[1].set_ylabel('Valores')
+    axs[1].set_xlim(0, ciclos - 1)
+    axs[1].set_ylim(0, 200000)
+    axs[1].set_xticks(range(0, ciclos + 1, numeros))
+    axs[1].set_yticks(range(0, 200000, int(200000/10)))
+    axs[1].legend(loc='best')
+    # Tercer gráfico: Valores promedio
+    axs[2].plot(ejex, valores_promedio, 'g')
+    axs[2].set_title('Valores Promedios')
+    axs[2].set_xlabel('Corrida')
+    axs[2].set_ylabel('Valores')
+    axs[2].set_xlim(0, ciclos - 1)
+    axs[2].set_ylim(0, 200000)
+    axs[2].set_xticks(range(0, ciclos + 1, numeros))
+    axs[2].set_yticks(range(0, 200000, int(200000/10)))
+    axs[2].legend(loc='best')
+    plt.tight_layout()
+    plt.show()
+
 
 '''
 opc = -1
@@ -756,11 +848,8 @@ while(opc != 0 and opc < 3):
 
 
 
-crear_universo_con_elitismo(10000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite)
-
-
-
-
+#crear_universo_con_elitismo(10000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite)
+crear_multiverso_con_elitismo(1000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite)
 
 
 
