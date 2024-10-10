@@ -90,7 +90,7 @@ ciclos = 10  #20 o 100 o 200
 tamanio_poblacion = 50
 minimo = [[], 1000000]
 prob_crossover = 0.8
-prob_mutacion = 0.667
+probabilidad_mutacion = 0.1
 tamanio_torneo = 2 #cambiar a porcentaje
 porcentaje_elitismo = 20 #porciento
 cantidad_elite = porcentaje_elitismo*tamanio_poblacion/100
@@ -173,7 +173,8 @@ def ordenar(generacion, tam_gen):
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def exhaustiva_2():
-    posibles_ciudades = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23] #esto se puede hacer como un array de 1s y 0s y en vez de eliminar un elemento, simplemente se iguala a 0 entre otros cambios
+    posibles_ciudades = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23] #esto se puede hacer como un array de 1s y 0s y en vez de eliminar un elemento, 
+    #simplemente se iguala a 0 entre otros cambios
     for ciudad in range(24):
         una_ruta = [ciudad]
         nuevas_posibles = posibles_ciudades.copy()
@@ -244,7 +245,7 @@ def heuristicainicial(ciudad_ini):
     posibles_ciudades = [k for k in range(len(ciudades)) if k != ciudad_ini]
     posicion_actual = ciudad_ini
 
-    while posibles_ciudades:
+    while(posibles_ciudades):
         distancia_min = float('inf')
         min_i = None
         
@@ -256,7 +257,7 @@ def heuristicainicial(ciudad_ini):
                 min_i = i
         
         # Agrega la ciudad más cercana a la ruta
-        if min_i is not None:
+        if(min_i is not None):
             ruta.append(posibles_ciudades[min_i])
             posicion_actual = posibles_ciudades[min_i]
             del posibles_ciudades[min_i]
@@ -268,7 +269,7 @@ def heuristicainicial(ciudad_ini):
     distancia_total = calcular_distancia_heuristica(ruta)
 
     # Actualiza la mejor ruta si es necesario
-    if distancia_total < mejor_distancia:
+    if(distancia_total < mejor_distancia):
         mejor_distancia = distancia_total
         mejor_ruta = ruta
 
@@ -290,26 +291,22 @@ def heuristica():
         posibles_ciudades = [k for k in range(24) if k != ciudad_inicial]
         posicion_actual = ciudad_inicial
 
-        while posibles_ciudades:
+        while(posibles_ciudades):
             distancia_min = float('inf')
             min_i = None
             for i in range(len(posibles_ciudades)):
                 distancia = argentina[posicion_actual][posibles_ciudades[i]]
-                if distancia is not None and distancia < distancia_min:
+                if(distancia is not None and distancia < distancia_min):
                     distancia_min = distancia
                     min_i = i
             
-            if min_i is not None:
+            if(min_i is not None):
                 ruta.append(posibles_ciudades[min_i])
                 posicion_actual = posibles_ciudades[min_i]
                 del posibles_ciudades[min_i]
-
         ruta.append(ciudad_inicial)
-
         distancia_total = calcular_distancia_heuristica(ruta)
-
-        # Compara con la mejor distancia encontrada
-        if distancia_total < mejor_distancia:
+        if(distancia_total < mejor_distancia):
             mejor_distancia = distancia_total
             mejor_ruta = ruta
 
@@ -501,9 +498,9 @@ def crossover_corte(padres, tam_pob):
         pareja +=2
     return next_generation
 
-def mutacion_cambio(ruta):
+def mutacion_cambio(ruta, prob):
     nueva_ruta = ruta[:]
-    if(prob_mutacion >= random.random()):
+    if(prob >= random.random()):
         indice1 = -1
         indice2 = -1
         while(indice1 == indice2):
@@ -513,9 +510,9 @@ def mutacion_cambio(ruta):
         nueva_ruta[indice2] = ruta[indice1]
     return nueva_ruta
 
-def mutacion_cambio_doble(ruta):
+def mutacion_cambio_doble(ruta, prob):
     nueva_ruta = ruta[:]
-    if(prob_mutacion >= random.random()):
+    if(prob >= random.random()):
         for vez in range(2):
             indice1 = -1
             indice2 = -1
@@ -526,32 +523,22 @@ def mutacion_cambio_doble(ruta):
             nueva_ruta[indice2] = ruta[indice1]
     return nueva_ruta
 
-def mutacion_inversion(ruta):
+def mutacion_inversion(ruta, prob):
     nueva_ruta = ruta[:]
-    indice1 = random.randint(0, len(ruta) - 1)
-    indice2 = random.randint(0, len(ruta) - 1)
-    if(indice1 > indice2):
-        indice1, indice2 = indice2, indice1
-    nueva_ruta[indice1:indice2 + 1] = reversed(nueva_ruta[indice1:indice2 + 1])
+    if(prob >= random.random()):
+        indice1 = random.randint(0, len(ruta) - 1)
+        indice2 = random.randint(0, len(ruta) - 1)
+        if(indice1 > indice2):
+            indice1, indice2 = indice2, indice1
+        nueva_ruta[indice1:indice2 + 1] = reversed(nueva_ruta[indice1:indice2 + 1])
     return nueva_ruta
 
-def crear_universo(cant_ciclos, seleccion, crossover, mutacion, tam_pob):
+def crear_universo(cant_ciclos, seleccion, crossover, mutacion, tam_pob, prob_mutacion):
     ejex = list()
     valores_minimos = list()
     valores_maximos = list()
     valores_promedio = list()
     generacion = generar_gen_inicial(tam_pob)
-    '''
-    print("Generacion inicial")
-    for idx, individuo in enumerate(generacion):
-            ruta_traducida = traducir_ruta(individuo[0], ciudades)
-            distancia_total = individuo[1]
-            
-            # Visualización mejorada
-            print(f"Ruta {idx + 1}:")
-            print(f"  Ciudades: {' -> '.join(ruta_traducida)}")
-            print(f"  Distancia total: {distancia_total}\n")
-    '''
     for ciclo in range(cant_ciclos): 
         ejex.append(ciclo)
         valor_promedio = 0
@@ -560,7 +547,7 @@ def crear_universo(cant_ciclos, seleccion, crossover, mutacion, tam_pob):
         siguiente_pob = crossover(padres, tam_pob)
         i = 0
         for i in range(len(siguiente_pob) - 1):
-            siguiente_pob[i][0] = mutacion(siguiente_pob[i][0])
+            siguiente_pob[i][0] = mutacion(siguiente_pob[i][0], prob_mutacion)
             calcular_distancia(siguiente_pob[i])
         
         ordenar(siguiente_pob, tam_pob)
@@ -633,42 +620,32 @@ def crear_universo(cant_ciclos, seleccion, crossover, mutacion, tam_pob):
     plt.tight_layout()
     plt.show()
 
-def crear_universo_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, tam_pob, cant_elite):
+def crear_universo_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, tam_pob, cant_elite, prob_mutacion):
     ejex = list()
     valores_minimos = list()
     valores_maximos = list()
     valores_promedio = list()
     generacion = generar_gen_inicial(tam_pob)
-    '''
-    print("Generacion inicial")
-    for idx, individuo in enumerate(generacion):
-            ruta_traducida = traducir_ruta(individuo[0], ciudades)
-            distancia_total = individuo[1]
-            
-            # Visualización mejorada
-            print(f"Ruta {idx + 1}:")
-            print(f"  Ciudades: {' -> '.join(ruta_traducida)}")
-            print(f"  Distancia total: {distancia_total}\n")
-    '''
     for ciclo in range(cant_ciclos): 
         ejex.append(ciclo)
         valor_promedio = 0
         tot_sum = 0
         elites = []
         ciudad = 0
+        prob_mutacion += 0.001
         for ciudad in range(int(cant_elite)):
-            elites.append(generacion[tam_pob - 1 - ciudad].copy()) #
+            elites.append(generacion[tam_pob - 1 - ciudad].copy())
         padres = seleccion(generacion, tam_pob)
         siguiente_pob = crossover(padres, tam_pob)
 
         for i in range(len(siguiente_pob) - 1):
-            siguiente_pob[i][0] = mutacion(siguiente_pob[i][0])
+            siguiente_pob[i][0] = mutacion(siguiente_pob[i][0], prob_mutacion)
             calcular_distancia(siguiente_pob[i])
 
         ordenar(siguiente_pob, tam_pob)
         ciudad = 0
         for ciudad in range(int(cant_elite)):
-            siguiente_pob[ciudad] = elites[ciudad].copy() #
+            siguiente_pob[ciudad] = elites[ciudad].copy()
         ordenar(siguiente_pob, tam_pob)
         generacion = siguiente_pob.copy() 
 
@@ -737,7 +714,7 @@ def crear_universo_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, tam
 
 #hace un tiempo descubri el concepto de algoritmos geneticos inspirados en quantica, lo que hace basicamente es crear varios universos que corren de manera normal solo que se introduce un operador llamado crossover quantico
 #el cual toma todos los cromosomas en la posicion i de cada universo y hace uno solo nuevo. si sale algo lindo capaz lo podemos poner como una curiosidad.
-def crear_multiverso_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, tam_pob, cant_elite):
+def crear_multiverso_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, tam_pob, cant_elite, prob_mutacion):
     ejex = list()
     valores_minimos = list()
     valores_maximos = list()
@@ -745,7 +722,6 @@ def crear_multiverso_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, t
     multiverso = []
     for universo in range(24):
         multiverso.append(generar_gen_inicial(tam_pob))
-
     for ciclo in range(cant_ciclos):
         universo = 0
         ejex.append(ciclo)
@@ -753,18 +729,21 @@ def crear_multiverso_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, t
         tot_sum = 0
         valor_minimo = [[], 100000]
         valor_maximo = [[], 0]
+        prob_mutacion += 0.001
         for universo in range(24):
             elites = []
             ciudad = 0
             for ciudad in range(int(cant_elite)):
-                elites.append(multiverso[universo][tam_pob - 1 - ciudad].copy())   #(generacion[tam_pob - 1 - ciudad])
+                elites.append(multiverso[universo][tam_pob - 1 - ciudad].copy())
             padres = seleccion(multiverso[universo], tam_pob)
             siguiente_pob = crossover(padres, tam_pob)
 
             for i in range(len(siguiente_pob) - 1):
-                siguiente_pob[i][0] = mutacion(siguiente_pob[i][0])
+                siguiente_pob[i][0] = mutacion(siguiente_pob[i][0], prob_mutacion)
                 calcular_distancia(siguiente_pob[i])
 
+            ordenar(siguiente_pob, tam_pob)
+            freak = crossover_multiversal_1(multiverso)
             ordenar(siguiente_pob, tam_pob)
             ciudad = 0
             for ciudad in range(int(cant_elite)):
@@ -774,9 +753,9 @@ def crear_multiverso_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, t
 
             for i in range(len(multiverso[universo]) - 1):
                 tot_sum += multiverso[universo][i][1]
-            if(multiverso[universo][int(len(multiverso[universo]) - 1)][1] < valor_minimo[1]):
+            if(multiverso[universo][tam_pob - 1][1] < valor_minimo[1]):
                  valor_minimo = multiverso[universo][int(len(multiverso[universo]) - 1)].copy()
-            if(multiverso[universo][0][1] < valor_maximo[1]):
+            if(multiverso[universo][0][1] > valor_maximo[1]):
                  valor_maximo = multiverso[universo][0].copy()
         valor_promedio = (tot_sum)/(24*(len(multiverso[0])))
         valores_minimos.append(valor_minimo[1])
@@ -850,8 +829,8 @@ while(opc != 0 and opc < 3):
 
 
 
-#crear_universo_con_elitismo(1000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite)
-crear_multiverso_con_elitismo(1000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite)
+crear_universo_con_elitismo(5000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite, probabilidad_mutacion)
+#crear_multiverso_con_elitismo(1000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite, probabilidad_mutacion)
 
 
 
