@@ -848,8 +848,8 @@ while(opc != 0 and opc < 3):
 
 
 
-crear_universo_con_elitismo(1000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite)
-#crear_multiverso_con_elitismo(1000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite)
+#crear_universo_con_elitismo(1000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite)
+crear_multiverso_con_elitismo(1000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite)
 
 
 
