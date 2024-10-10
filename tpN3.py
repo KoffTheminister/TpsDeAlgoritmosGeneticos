@@ -83,7 +83,7 @@ ciudades = [
 #librerias
 import random
 import matplotlib
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt 
 
 #parametros
 ciclos = 10  #20 o 100 o 200
@@ -597,7 +597,7 @@ def crear_universo(cant_ciclos, seleccion, crossover, mutacion, tam_pob):
         print(f"  Ciudades: {' -> '.join(ruta_traducida)}")
         print(f"  Distancia total: {distancia_total}\n")
         '''
-    numeros = int(ciclos/10)
+    numeros = int(cant_ciclos/10)
     fig, axs = plt.subplots(1, 3, figsize=(15, 4))  # Reducimos el tamaño de la figura
     fig.suptitle('Estadísticas Finales sin Elitismo', fontsize=16)
     # Primer gráfico: Valores mínimos
@@ -605,9 +605,9 @@ def crear_universo(cant_ciclos, seleccion, crossover, mutacion, tam_pob):
     axs[0].set_title('Valores Mínimos')
     axs[0].set_xlabel('Corrida')
     axs[0].set_ylabel('Valores')
-    axs[0].set_xlim(0, ciclos - 1)
+    axs[0].set_xlim(0, cant_ciclos - 1)
     axs[0].set_ylim(0, 200000)
-    axs[0].set_xticks(range(0, ciclos + 1, numeros))
+    axs[0].set_xticks(range(0, cant_ciclos + 1, numeros))
     axs[0].set_yticks(range(0, 200000, int(200000/10)))
     axs[0].legend(loc='best')
     # Segundo gráfico: Valores máximos
@@ -615,9 +615,9 @@ def crear_universo(cant_ciclos, seleccion, crossover, mutacion, tam_pob):
     axs[1].set_title('Valores Máximos')
     axs[1].set_xlabel('Corrida')
     axs[1].set_ylabel('Valores')
-    axs[1].set_xlim(0, ciclos - 1)
+    axs[1].set_xlim(0, cant_ciclos - 1)
     axs[1].set_ylim(0, 200000)
-    axs[1].set_xticks(range(0, ciclos + 1, numeros))
+    axs[1].set_xticks(range(0, cant_ciclos + 1, numeros))
     axs[1].set_yticks(range(0, 200000, int(200000/10)))
     axs[1].legend(loc='best')
     # Tercer gráfico: Valores promedio
@@ -625,9 +625,9 @@ def crear_universo(cant_ciclos, seleccion, crossover, mutacion, tam_pob):
     axs[2].set_title('Valores Promedios')
     axs[2].set_xlabel('Corrida')
     axs[2].set_ylabel('Valores')
-    axs[2].set_xlim(0, ciclos - 1)
+    axs[2].set_xlim(0, cant_ciclos - 1)
     axs[2].set_ylim(0, 200000)
-    axs[2].set_xticks(range(0, ciclos + 1, numeros))
+    axs[2].set_xticks(range(0, cant_ciclos + 1, numeros))
     axs[2].set_yticks(range(0, 200000, int(200000/10)))
     axs[2].legend(loc='best')
     plt.tight_layout()
@@ -699,17 +699,17 @@ def crear_universo_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, tam
         print(f"Ruta {idx + 1}:")
         print(f"  Ciudades: {' -> '.join(ruta_traducida)}")
         print(f"  Distancia total: {distancia_total}\n")
-    numeros = int(ciclos/10)
+    numeros = int(cant_ciclos/10)
     fig, axs = plt.subplots(1, 3, figsize=(15, 4))  # Reducimos el tamaño de la figura
-    fig.suptitle('Estadísticas Finales sin Elitismo', fontsize=16)
+    fig.suptitle('Estadísticas Finales con Elitismo', fontsize=16)
     # Primer gráfico: Valores mínimos
     axs[0].plot(ejex, valores_minimos, 'b')
     axs[0].set_title('Valores Mínimos')
     axs[0].set_xlabel('Corrida')
     axs[0].set_ylabel('Valores')
-    axs[0].set_xlim(0, ciclos - 1)
+    axs[0].set_xlim(0, cant_ciclos - 1)
     axs[0].set_ylim(0, 200000)
-    axs[0].set_xticks(range(0, ciclos + 1, numeros))
+    axs[0].set_xticks(range(0, cant_ciclos + 1, numeros))
     axs[0].set_yticks(range(0, 200000, int(200000/10)))
     axs[0].legend(loc='best')
     # Segundo gráfico: Valores máximos
@@ -717,9 +717,9 @@ def crear_universo_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, tam
     axs[1].set_title('Valores Máximos')
     axs[1].set_xlabel('Corrida')
     axs[1].set_ylabel('Valores')
-    axs[1].set_xlim(0, ciclos - 1)
+    axs[1].set_xlim(0, cant_ciclos - 1)
     axs[1].set_ylim(0, 200000)
-    axs[1].set_xticks(range(0, ciclos + 1, numeros))
+    axs[1].set_xticks(range(0, cant_ciclos + 1, numeros))
     axs[1].set_yticks(range(0, 200000, int(200000/10)))
     axs[1].legend(loc='best')
     # Tercer gráfico: Valores promedio
@@ -727,9 +727,9 @@ def crear_universo_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, tam
     axs[2].set_title('Valores Promedios')
     axs[2].set_xlabel('Corrida')
     axs[2].set_ylabel('Valores')
-    axs[2].set_xlim(0, ciclos - 1)
+    axs[2].set_xlim(0, cant_ciclos - 1)
     axs[2].set_ylim(0, 200000)
-    axs[2].set_xticks(range(0, ciclos + 1, numeros))
+    axs[2].set_xticks(range(0, cant_ciclos + 1, numeros))
     axs[2].set_yticks(range(0, 200000, int(200000/10)))
     axs[2].legend(loc='best')
     plt.tight_layout()
@@ -781,19 +781,21 @@ def crear_multiverso_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, t
         valor_promedio = (tot_sum)/(24*(len(multiverso[0])))
         valores_minimos.append(valor_minimo[1])
         valores_maximos.append(valor_maximo[1])
+        valores_promedio.append(valor_promedio)
     print(valor_minimo)
 
-    numeros = int(ciclos/10)
+
+    numeros = int(cant_ciclos/10)
     fig, axs = plt.subplots(1, 3, figsize=(15, 4))  # Reducimos el tamaño de la figura
-    fig.suptitle('Estadísticas Finales sin Elitismo', fontsize=16)
+    fig.suptitle('Estadísticas Finales con Elitismo y Multiverso', fontsize=16)
     # Primer gráfico: Valores mínimos
     axs[0].plot(ejex, valores_minimos, 'b')
     axs[0].set_title('Valores Mínimos')
     axs[0].set_xlabel('Corrida')
     axs[0].set_ylabel('Valores')
-    axs[0].set_xlim(0, ciclos - 1)
+    axs[0].set_xlim(0, cant_ciclos - 1)
     axs[0].set_ylim(0, 200000)
-    axs[0].set_xticks(range(0, ciclos + 1, numeros))
+    axs[0].set_xticks(range(0, cant_ciclos + 1, numeros))
     axs[0].set_yticks(range(0, 200000, int(200000/10)))
     axs[0].legend(loc='best')
     # Segundo gráfico: Valores máximos
@@ -801,9 +803,9 @@ def crear_multiverso_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, t
     axs[1].set_title('Valores Máximos')
     axs[1].set_xlabel('Corrida')
     axs[1].set_ylabel('Valores')
-    axs[1].set_xlim(0, ciclos - 1)
+    axs[1].set_xlim(0, cant_ciclos - 1)
     axs[1].set_ylim(0, 200000)
-    axs[1].set_xticks(range(0, ciclos + 1, numeros))
+    axs[1].set_xticks(range(0, cant_ciclos + 1, numeros))
     axs[1].set_yticks(range(0, 200000, int(200000/10)))
     axs[1].legend(loc='best')
     # Tercer gráfico: Valores promedio
@@ -811,9 +813,9 @@ def crear_multiverso_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, t
     axs[2].set_title('Valores Promedios')
     axs[2].set_xlabel('Corrida')
     axs[2].set_ylabel('Valores')
-    axs[2].set_xlim(0, ciclos - 1)
+    axs[2].set_xlim(0, cant_ciclos - 1)
     axs[2].set_ylim(0, 200000)
-    axs[2].set_xticks(range(0, ciclos + 1, numeros))
+    axs[2].set_xticks(range(0, cant_ciclos + 1, numeros))
     axs[2].set_yticks(range(0, 200000, int(200000/10)))
     axs[2].legend(loc='best')
     plt.tight_layout()
@@ -850,6 +852,10 @@ while(opc != 0 and opc < 3):
 
 #crear_universo_con_elitismo(1000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite)
 crear_multiverso_con_elitismo(1000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite)
+
+
+
+
 
 
 
