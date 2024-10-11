@@ -84,6 +84,7 @@ ciudades = [
 import random
 import matplotlib
 from matplotlib import pyplot as plt 
+from os import system
 
 #parametros
 ciclos = 10  #20 o 100 o 200
@@ -814,9 +815,11 @@ def crear_multiverso_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, t
 
 opc = -1
 opc2 = -1
-while(opc != 0 and opc < 3):
-    print("1: Heuristica")
-    print("2: Algoritmos geneticos")
+
+while(opc != 0 and opc < 4):
+    print("1: Heuristica con ciudad inicial")
+    print("2: Heuristica sin ciudad inicial, ruta mas optima")
+    print("3: Algoritmos geneticos")
     print("0: Salir")
     opc = int(input("Ingrese una opcion: "))
     if(opc == 1):
@@ -826,9 +829,11 @@ while(opc != 0 and opc < 3):
         mejorruta, mejordistancia = heuristicainicial(ciudadini)
         print("Mejor Ruta x Heuristica")
         ver_ciudadeini(mejorruta)
-        print(mejordistancia)
-        #ver_ciudades(mejorruta)     
+        print("La distancia de la mejor ruta es: ", mejordistancia)
+        #ver_ciudades(mejorruta) 
     elif(opc == 2):
+        print(ver_ciudades(heuristica()))    
+    elif(opc == 3):
         ciclos = 5000
         params = input("Desea cambiar los parametros? Y / N: ")
         if(params.lower() == "y"):
@@ -846,12 +851,11 @@ while(opc != 0 and opc < 3):
             crear_universo(ciclos, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30,  probabilidad_mutacion)
         else:
             crear_universo_con_elitismo(ciclos, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite, probabilidad_mutacion)
-
+    input()
+    system("cls")
 
 
 
 #crear_multiverso_con_elitismo(1000, ruleta_segun_rango, crossover_corte, mutacion_inversion, 30, cantidad_elite, probabilidad_mutacion)
-
-
 
 
