@@ -338,6 +338,17 @@ def generar_gen_inicial(tam_pob):
         ordenar(generacion_inicial, cambrian + 1)
     return generacion_inicial
 
+def generar_ruta_individual():
+    posibles_ciudades = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+    tam_p_c = 23
+    nueva_ruta = [[], 0]
+    for ciudad in range(24):
+        i_random = random.randint(0, tam_p_c - ciudad )
+        nueva_ruta[0].append(posibles_ciudades[i_random])
+        del posibles_ciudades[i_random]
+    calcular_distancia(nueva_ruta)
+    return nueva_ruta
+
 #selecciones
 def ruleta_segun_rango(cromosomas, tam_gen):
     padres = []
@@ -533,6 +544,10 @@ def mutacion_inversion(ruta, prob):
         nueva_ruta[indice1:indice2 + 1] = reversed(nueva_ruta[indice1:indice2 + 1])
     return nueva_ruta
 
+#def crossover_multiversal_1(multiverso, column):
+#    if(0.667 > random.random()):
+
+
 def crear_universo(cant_ciclos, seleccion, crossover, mutacion, tam_pob, prob_mutacion):
     ejex = list()
     valores_minimos = list()
@@ -646,6 +661,15 @@ def crear_universo_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, tam
         ciudad = 0
         for ciudad in range(int(cant_elite)):
             siguiente_pob[ciudad] = elites[ciudad].copy()
+
+        
+        ciudad = 0
+        for ciudad in range(tam_pob):
+            ciudad_2 = 0
+            for ciudad_2 in range(ciudad, tam_pob):
+                if(siguiente_pob[ciudad] == siguiente_pob[ciudad_2] and ciudad != ciudad_2):
+                    siguiente_pob[ciudad] = generar_ruta_individual()
+        
         ordenar(siguiente_pob, tam_pob)
         generacion = siguiente_pob.copy() 
 
@@ -743,7 +767,8 @@ def crear_multiverso_con_elitismo(cant_ciclos, seleccion, crossover, mutacion, t
                 calcular_distancia(siguiente_pob[i])
 
             ordenar(siguiente_pob, tam_pob)
-            freak = crossover_multiversal_1(multiverso)
+            for column in range(tam_pob):
+                freak = crossover_multiversal_1(multiverso, column)
             ordenar(siguiente_pob, tam_pob)
             ciudad = 0
             for ciudad in range(int(cant_elite)):
